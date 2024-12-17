@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+
+:root {
+    --primary-color: #0DFF92;
+    --dark-color:#222222;
+    --light-color: #f0f0f0;
+}
+
+body {
+    background-color: #1eb2a6;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.title {
+    font-size: 3em;
+    margin: 0.8em 0;
+}
+
+.text-light {
+    color: #f0f0f0;
+}
+
+.textbox {
+    width: 40%;
+    min-width: 300px;
+    background-color: #ffffff;
+    padding: 2em;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.textbox input, .textbox select {
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.btn {
+    width: 100%;
+    padding: 15px;
+    margin-top: 20px;
+    background: #1eb2a6;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn:hover {
+    background: #189a90;
+}
+
+.auth-links {
+    margin-top: 20px;
+    text-align: center;
+    width: 100%;
+}
+
+.auth-link {
+    color: #136b7f;
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 10px;
+    display: inline-block;
+}
+
+.auth-link:hover {
+    text-decoration: underline;
+    color: #17c6e5;
+}
+
+.error-msg {
+    color: #ff3333;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.error {
+    color: #ff3333;
+    font-size: 0.8em;
+    margin-top: 5px;
+    text-align: left;
+}
+
+.textbox input, .textbox select {
+    width: 100%;
+    padding: 15px;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.textbox input:focus, .textbox select:focus {
+    outline: none;
+    border-color: #1eb2a6;
+}

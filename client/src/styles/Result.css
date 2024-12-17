@@ -1,0 +1,118 @@
+/* Ensure the container takes full width and centers the content */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center horizontally */
+    width: 100%;
+    padding: 0 20px; /* Adjust padding */
+    box-sizing: border-box; /* Include padding in width calculations */
+}
+
+/* Centered content styling */
+.flex-center {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    border: 3px solid #17c6e5;
+    padding: 3em 4em;
+    gap: 1em;
+    width: 100%; /* Allow it to use full width of its parent */
+    max-width: 900px; /* Limit width for larger screens */
+    box-sizing: border-box; /* Include padding in width calculations */
+}
+
+/* Flex container adjustments */
+.container .flex {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.container .flex span {
+    font-size: 1.4em;
+    color: black;
+}
+
+.container .flex span.bold {
+    font-weight: bold;
+}
+
+.container .flex span.achive {
+    font-weight: bold;
+    color: #ff2a66;
+}
+
+/* Table Styles */
+table {
+    width: 100%; /* Full width */
+    margin-top: 2em; /* Space above the table */
+    border-collapse: collapse; /* Collapse table borders for better spacing */
+    box-sizing: border-box;
+}
+
+/* Table Header Styling */
+.table-header {
+    color: #cecece;
+    font-size: 1.1em;
+    text-align: center;
+    background: #212121;
+    padding: 18px 0;
+}
+
+.table-header td {
+    border: 1px solid #faff5a; /* Yellow border for table headers */
+}
+
+/* Table Body Styling */
+.table-body {
+    font-size: 1.1em;
+    text-align: center;
+    background: #d8d8d8;
+    padding: 18px 0;
+}
+
+.table-body td {
+    border: 1px solid #ccc; /* Light border for body cells */
+    padding: 15px; /* Add some space inside table cells */
+}
+
+/* Table Rows Styling */
+.table-body tr:hover {
+    background-color: #f5f5f5; /* Hover effect for rows */
+}
+
+/* Styling for the table data to prevent text overflow */
+.table-body td {
+    word-wrap: break-word;
+}
+
+/* Ensure table has proper width on smaller screens */
+@media (max-width: 768px) {
+    .table-header,
+    .table-body {
+        font-size: 0.9em; /* Slightly smaller font for mobile screens */
+    }
+
+    .table-body td {
+        padding: 12px; /* Reduce padding for smaller screens */
+    }
+}
+
+/* Styling for the Restart Button */
+.start {
+    margin-top: 2em;
+}
+
+.start .btn {
+    padding: 10px 20px;
+    background-color: #17c6e5;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1.1em;
+    transition: background-color 0.3s;
+}
+
+.start .btn:hover {
+    background-color: #13a6b0;
+}

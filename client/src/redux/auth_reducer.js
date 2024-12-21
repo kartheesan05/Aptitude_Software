@@ -2,7 +2,8 @@ export const authReducer = (state = {
     username: '',
     email: '',
     department: '',
-    departmentId: ''
+    departmentId: '',
+    regNo: ''
 }, action) => {
     switch (action.type) {
         case 'SET_USER_DETAILS':

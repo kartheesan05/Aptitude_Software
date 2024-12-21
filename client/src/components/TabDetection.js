@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function useTabVisibility() {
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const [alertShown, setAlertShown] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (typeof document.hidden === "undefined") {
@@ -10,24 +12,33 @@ function useTabVisibility() {
       return;
     }
 
-    console.log("Visibility change listener is being added.");
+    console.log("Tab detection initialized");
 
+    // Create audio element for beep sound
     const beepSound = new Audio('https://www.soundjay.com/button/beep-07.wav');
+    beepSound.load(); // Preload the sound
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         console.log('Tab switched away!');
-        setTabSwitchCount((prevCount) => prevCount + 1); 
+        setTabSwitchCount(prevCount => {
+          const newCount = prevCount + 1;
+          console.log('Switch count:', newCount);
 
-        if (!alertShown) {
-          alert('You switched tabs!');
-          beepSound.play();
-          setAlertShown(true); 
-        }
+          if (newCount === 1 && !alertShown) {
+            // First switch
+            beepSound.play().catch(err => console.log('Error playing sound:', err));
+            alert('Warning: You switched tabs! This is your first warning.');
+            setAlertShown(true);
+          } else if (newCount === 2) {
+            // Second switch
+            beepSound.play().catch(err => console.log('Error playing sound:', err));
+            alert('You have switched tabs twice. The test will now end.');
+            navigate('/feedback'); // Navigate to results page
+          }
 
-        if (tabSwitchCount + 1 === 2) {
-          alert('You have switched tabs twice. The test is over!');
-        }
+          return newCount;
+        });
       }
     };
 
@@ -35,9 +46,9 @@ function useTabVisibility() {
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      console.log('Visibility change listener removed');
+      console.log('Tab detection cleanup');
     };
-  }, [tabSwitchCount, alertShown]);
+  }, [alertShown, navigate]);
 
   return { tabSwitchCount };
 }
@@ -46,8 +57,9 @@ const TabDetection = () => {
   const { tabSwitchCount } = useTabVisibility();
 
   return (
-    <div>
-      <h1>{`You have switched tabs ${tabSwitchCount} times.`}</h1>
+    <div style={{ display: 'none' }}>
+      {/* Hidden component that just handles tab detection */}
+      <span>{tabSwitchCount}</span>
     </div>
   );
 };

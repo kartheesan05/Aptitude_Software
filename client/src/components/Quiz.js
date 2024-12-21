@@ -2,27 +2,27 @@ import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { useFetchQestion, MoveNextQuestion, MovePrevQuestion } from '../hooks/FetchQuestion'
-import { updateResult } from '../hooks/setResult'
+import { updateResult } from '../redux/result_reducer'
 import '../styles/App.css'
+import TabDetection from './TabDetection'
 
 export default function Quiz() {
     const [check, setChecked] = useState(undefined)
     const dispatch = useDispatch();
     const navigate = useNavigate();
     
-    // Get state from Redux
-    const { questions: { queue, answers }, result: { result } } = useSelector(state => state);
-    const [{ isLoading, serverError, apiData }] = useFetchQestion();
-    const trace = useSelector(state => state.questions.trace);
+    const { 
+        questions: { queue, answers, trace },
+        result: { result }
+    } = useSelector(state => state);
+
+    const [{ isLoading, serverError }] = useFetchQestion();
 
     useEffect(() => {
-        console.log("Quiz State:", {
-            queue,
-            trace,
-            result,
-            check
-        });
-    }, [queue, trace, result, check]);
+        console.log("Current trace:", trace);
+        console.log("Current result:", result);
+        setChecked(result[trace]);
+    }, [trace]);
 
     function onNext(){
         if(trace < queue?.length){
@@ -31,26 +31,26 @@ export default function Quiz() {
                 dispatch(updateResult({ trace, checked: check }));
             }
             
-            // If this is the last question
+            // Navigate to feedback on last question
             if(trace === queue?.length - 1){
                 navigate('/feedback');
                 return;
             }
 
             dispatch(MoveNextQuestion());
-            setChecked(undefined);
         }
     }
 
     function onPrev(){
         if(trace > 0){
             dispatch(MovePrevQuestion());
-            setChecked(result[trace - 1]);
         }
     }
 
-    function onChecked(i){
+    function onSelect(i) {
+        console.log("Selected answer for question", trace + 1, ":", i);
         setChecked(i);
+        dispatch(updateResult({ trace, checked: i }));
     }
 
     if(isLoading) return <h3 className='text-light'>isLoading</h3>
@@ -58,23 +58,24 @@ export default function Quiz() {
 
     return (
         <div className='container'>
-            <h1 className='title text-light'>Quiz Application</h1>
+            <TabDetection />
+            {/* <h1 className='title text-light'>Quiz Application</h1> */}
 
             <div className='questions'>
                 <h2 className='text-light'>{queue?.[trace]?.question}</h2>
 
-                <ul>
+                <ul key={`question-${trace}`}>
                     {queue?.[trace]?.options?.map((q, i) => (
-                        <li key={i}>
+                        <li key={`q${trace}-${i}`}>
                             <input 
                                 type="radio"
                                 value={i}
-                                name={`question_${trace}`}
-                                id={`q${i}-option`}
-                                onChange={() => onChecked(i)}
+                                name={`question-${trace}`}
+                                id={`q${trace}-${i}`}
+                                onChange={() => onSelect(i)}
                                 checked={check === i}
                             />
-                            <label className='text-primary' htmlFor={`q${i}-option`}>{q}</label>
+                            <label className='text-primary' htmlFor={`q${trace}-${i}`}>{q}</label>
                             <div className={`check ${check === i ? 'checked' : ''}`}></div>
                         </li>
                     ))}

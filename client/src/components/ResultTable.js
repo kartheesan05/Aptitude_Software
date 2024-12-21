@@ -7,9 +7,12 @@ export default function ResultTable() {
 
     useEffect(() => {
         getServerData(`${process.env.REACT_APP_SERVER_HOSTNAME}/api/result`, (res) => {
-            setData(res)
+            const sortedData = res.sort((a, b) => 
+                new Date(b.createdAt) - new Date(a.createdAt)
+            );
+            setData(sortedData);
         })
-    })
+    }, [])
 
   return (
     <div>
@@ -17,20 +20,20 @@ export default function ResultTable() {
             <thead className='table-header'>
                 <tr className='table-row'>
                     <td>Name</td>
-                    <td>Attemps</td>
-                    <td>Earn Points</td>
-                    <td>Result</td>
+                    <td>Registration No</td>
+                    <td>Score</td>
+                    <td>Total Questions</td>
                 </tr>
             </thead>
             <tbody>
-                { !data ?? <div>No Data Found </div>}
+                {data.length === 0 && <tr><td colSpan="4">No Data Found</td></tr>}
                 {
                     data.map((v, i) => (
                         <tr className='table-body' key={i}>
                             <td>{v?.username || ''}</td>
-                            <td>{v?.attempts || 0}</td>
-                            <td>{v?.points || 0}</td>
-                            <td>{v?.achived || ""}</td>
+                            <td>{v?.regNo || ''}</td>
+                            <td>{v?.points || 0} points</td>
+                            <td>{v?.totalQuestions || 0} questions</td>
                         </tr>
                     ))
                 }

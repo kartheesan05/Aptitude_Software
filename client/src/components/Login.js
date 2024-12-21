@@ -3,38 +3,35 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setUserDetails } from '../redux/result_reducer';
 import '../styles/Login.css';
- 
+import axios from 'axios';
+
 const departments = [
-    { id: 'cs', name: 'Computer Science', coreCategory: 'cs' },
+    { id: 'cs', name: 'Computer Science and Engineering', coreCategory: 'cs' },
     { id: 'it', name: 'Information Technology', coreCategory: 'it' },
-    { id: 'ece', name: 'Electronics', coreCategory: 'ec' },
-    { id: 'eee', name: 'Electrical', coreCategory: 'ee' },
-    { id: 'mech', name: 'Mechanical', coreCategory: 'mech' },
-    { id: 'civil', name: 'Civil', coreCategory: 'civil' },
-    { id: 'chem', name: 'Chemical', coreCategory: 'chem' },
+    { id: 'ec', name: 'Electronics and Communication Engineering', coreCategory: 'ec' },
+    { id: 'ee', name: 'Electrical and Electronics Engineering', coreCategory: 'ee' },
+    { id: 'mech', name: 'Mechanical Engineering', coreCategory: 'mech' },
+    { id: 'civil', name: 'Civil Engineering', coreCategory: 'civil' },
+    { id: 'chem', name: 'Chemical Engineering', coreCategory: 'chem' },
     { id: 'bio', name: 'Biotechnology', coreCategory: 'bio' },
-    { id: 'aids', name: 'AI & DS', coreCategory: 'aids' },
-    { id: 'auto', name: 'Automobile', coreCategory: 'auto' },
-    { id: 'marine', name: 'Marine', coreCategory: 'marine' }
+    { id: 'aids', name: 'Artificial Intelligence and Data Science', coreCategory: 'aids' },
+    { id: 'auto', name: 'Automobile Engineering', coreCategory: 'auto' },
+    { id: 'marine', name: 'Marine Engineering', coreCategory: 'marine' }
 ];
 
 export default function Login() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const [errors, setErrors] = useState({
-        username: '',
-        email: '',
-        regNo: '',
-        department: '',
-        code: ''
-    });
+    const [error, setError] = useState('');
+    const [errors, setErrors] = useState({});
     
     const [formData, setFormData] = useState({
         username: '',
         email: '',
         regNo: '',
         department: departments[0],
-        code: ''
+        // code: '',
+        accessCode: ''
     });
 
     const validateEmail = (email) => {
@@ -52,7 +49,7 @@ export default function Login() {
                 department: selectedDept
             }));
         } else if (name === 'email' && value && !validateEmail(value)) {
-            setErrors(prev => ({...prev, email: 'Please use your SVCE email (@svce.ac.in)'}));
+            setErrors(prev => ({...prev, email: 'Please use your college email'}));
             setFormData(prev => ({...prev, [name]: value}));
         } else {
             setFormData(prev => ({...prev, [name]: value}));
@@ -61,15 +58,14 @@ export default function Login() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const newErrors = {};
-        const { username, email, regNo, department, code } = formData;
+        setErrors({});
 
-        if (!username) newErrors.username = 'Username is required';
-        if (!email) newErrors.email = 'Email is required';
-        else if (!validateEmail(email)) newErrors.email = 'Please use your SVCE email (@svce.ac.in)';
-        if (!regNo) newErrors.regNo = 'Registration number is required';
-        if (!department) newErrors.department = 'Department is required';
-        if (!code) newErrors.code = 'Code is required';
+        let newErrors = {};
+        if (!formData.username?.trim()) newErrors.username = 'Username is required';
+        if (!formData.email?.trim()) newErrors.email = 'Email is required';
+        if (!formData.regNo?.trim()) newErrors.regNo = 'Registration number is required';
+        if (!formData.department) newErrors.department = 'Department is required';
+        if (!formData.accessCode?.trim()) newErrors.accessCode = 'Access code is required';
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -77,28 +73,58 @@ export default function Login() {
         }
 
         try {
+            const codeResponse = await axios.post('http://localhost:5000/api/users/verify-code', {
+                accessCode: formData.accessCode
+            });
+
+            if (!codeResponse.data.valid) {
+                setErrors({ accessCode: 'Invalid access code' });
+                return;
+            }
+
+            const checkResponse = await axios.post('http://localhost:5000/api/users/check-user', {
+                email: formData.email,
+                regNo: formData.regNo
+            });
+
+            if (!checkResponse.data.canTakeTest) {
+                setError('You have already taken the test. Each user can only take the test once.');
+                return;
+            }
+
             dispatch(setUserDetails({
-                username,
-                email,
-                regNo,
-                department: department.name,
-                departmentId: department.id,
-                code
+                username: formData.username,
+                email: formData.email,
+                regNo: formData.regNo,
+                department: formData.department.name,
+                departmentId: formData.department.id,
+                code: formData.code
             }));
             
-            console.log('Navigating to instructions...');
+            console.log('Navigating to instructions with data:', {
+                username: formData.username,
+                email: formData.email,
+                regNo: formData.regNo,
+                department: formData.department.name,
+                departmentId: formData.department.id
+            });
+            
             navigate('/instructions');
             
         } catch (error) {
-            setErrors(prev => ({...prev, general: "Error during login"}));
+            console.error("Login error:", error);
+            setErrors({ 
+                general: error.response?.data?.message || 'An error occurred. Please try again.'
+            });
         }
     };
 
     return (
         <div className='container'>
-            <h1 className='title text-light'>Quiz Login</h1>
+            <h1 className='title text-light'>Login</h1>
 
             <form className='textbox' onSubmit={handleSubmit}>
+                {errors.general && <div className="error-msg">{errors.general}</div>}
                 <div className="input-group">
                     <input
                         type="text"
@@ -112,17 +138,6 @@ export default function Login() {
 
                 <div className="input-group">
                     <input
-                        type="email"
-                        name="email"
-                        placeholder="Email"
-                        value={formData.email}
-                        onChange={handleChange}
-                    />
-                    {errors.email && <div className="error">{errors.email}</div>}
-                </div>
-
-                <div className="input-group">
-                    <input
                         type="text"
                         name="regNo"
                         placeholder="Registration Number"
@@ -130,6 +145,17 @@ export default function Login() {
                         onChange={handleChange}
                     />
                     {errors.regNo && <div className="error">{errors.regNo}</div>}
+                </div>
+
+                <div className="input-group">
+                    <input
+                        type="email"
+                        name="email"
+                        placeholder="Email"
+                        value={formData.email}
+                        onChange={handleChange}
+                    />
+                    {errors.email && <div className="error">{errors.email}</div>}
                 </div>
 
                 <div className="input-group">
@@ -147,7 +173,7 @@ export default function Login() {
                     {errors.department && <div className="error">{errors.department}</div>}
                 </div>
 
-                <div className="input-group">
+                {/* <div className="input-group">
                     <input
                         type="text"
                         name="code"
@@ -156,6 +182,18 @@ export default function Login() {
                         onChange={handleChange}
                     />
                     {errors.code && <div className="error">{errors.code}</div>}
+                </div> */}
+
+                <div className="input-group">
+                    <input
+                        type="text"
+                        name="accessCode"
+                        placeholder="Access Code"
+                        value={formData.accessCode}
+                        onChange={handleChange}
+                        required
+                    />
+                    {errors.accessCode && <div className="error">{errors.accessCode}</div>}
                 </div>
 
                 <button type="submit" className='btn'>

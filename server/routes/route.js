@@ -147,34 +147,66 @@ router.get('/result', async (req, res) => {
 
 router.post('/result', async (req, res) => {
     try {
+        console.log("Received result data:", req.body);
+
         const { 
             username, 
             email, 
             regNo,
             department, 
             result, 
-            attempts, 
+            attempts,
             points,
             totalQuestions 
         } = req.body;
 
+        // Validate required fields
+        if (!username || !email || !regNo) {
+            console.error("Missing required fields:", { username, email, regNo });
+            return res.status(400).json({ 
+                error: 'Missing required fields',
+                received: { username, email, regNo }
+            });
+        }
+
+        // Check if user already exists by registration number
+        const existingResult = await Result.findOne({ regNo });
+        if (existingResult) {
+            // Update existing result
+            existingResult.result = result;
+            existingResult.attempts = attempts;
+            existingResult.points = points;
+            existingResult.totalQuestions = totalQuestions;
+            
+            const updatedResult = await existingResult.save();
+            console.log("Updated existing result:", updatedResult);
+            return res.json(updatedResult);
+        }
+
+        // Create new result
         const newResult = new Result({
             username,
             email,
-            regNo,
-            dept: department,
-            result,
-            attempts,
-            points,
-            totalQuestions
+            regNo,  // Make sure regNo is included
+            dept: department || '',
+            result: result || [],
+            attempts: attempts || 0,
+            points: points || 0,
+            totalQuestions: totalQuestions || 0
         });
 
+        console.log("Saving new result:", newResult);
         const savedResult = await newResult.save();
+        console.log("Result saved successfully:", savedResult);
         res.json(savedResult);
 
     } catch (error) {
-        console.error('Error saving result:', error);
-        res.status(500).json({ error: error.message });
+        console.error("Server error:", error);
+        res.status(500).json({ 
+            error: 'Server error',
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 

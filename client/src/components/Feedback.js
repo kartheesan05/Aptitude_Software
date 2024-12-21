@@ -3,67 +3,87 @@ import { useSelector } from 'react-redux';
 import { postServerData } from '../helper/helper';
 
 export default function Feedback() {
-    const { queue } = useSelector(state => state.questions);
-    const { result, username, email, department } = useSelector(state => state.result);
+    const { 
+        questions: { queue, answers },
+        result: { result, username, email, regNo, department, departmentId }
+    } = useSelector(state => state);
+
+    const storeResult = async () => {
+        try {
+            // Calculate points
+            let correctCount = 0;
+            let attemptedCount = 0;
+
+            // Log the complete state for debugging
+            console.log("Complete state:", {
+                answers,
+                userAnswers: result,
+                queue: queue.length
+            });
+
+            // Compare answers
+            result.forEach((userAnswer, index) => {
+                if (userAnswer !== undefined) {
+                    attemptedCount++;
+                    const isCorrect = Number(userAnswer) === Number(answers[index]);
+                    
+                    console.log(`Question ${index + 1}:`, {
+                        userAnswer,
+                        correctAnswer: answers[index],
+                        isCorrect
+                    });
+
+                    if (isCorrect) {
+                        correctCount++;
+                    }
+                }
+            });
+
+            console.log("Final calculation:", {
+                attemptedQuestions: attemptedCount,
+                correctAnswers: correctCount,
+                totalQuestions: queue.length
+            });
+
+            const resultData = {
+                username,
+                email,
+                regNo,
+                department,
+                departmentId,
+                result,
+                attempts: attemptedCount,
+                points: correctCount,
+                totalQuestions: queue.length
+            };
+
+            console.log("Submitting result with regNo:", resultData);
+
+            const response = await postServerData(
+                `${process.env.REACT_APP_SERVER_HOSTNAME}/api/result`,
+                resultData
+            );
+            
+            console.log("Server response:", response);
+            return response;
+        } catch (error) {
+            console.error("Error storing result:", error);
+            throw error;
+        }
+    };
 
     useEffect(() => {
-        console.log("Feedback Component Mounted");
-        console.log("Current State:", {
-            queue,
-            result,
-            username,
-            email,
-            department
-        });
-
-        console.log("Redux result state:", {
-            resultLength: result?.length,
-            resultData: result,
-            isArray: Array.isArray(result)
-        });
-
-        const storeResult = async () => {
-            try {
-                const resultData = {
-                    username,
-                    email,
-                    dept: department,
-                    result: result,
-                    attempts: result.filter(r => r !== undefined).length,
-                    points: result.reduce((prev, curr, idx) => {
-                        return prev + (curr === queue[idx]?.correct ? 10 : 0)
-                    }, 0)
-                };
-
-                console.log("About to send result data:", resultData);
-                console.log("Server URL:", `${process.env.REACT_APP_SERVER_HOSTNAME}/api/result`);
-                
-                const response = await postServerData(`${process.env.REACT_APP_SERVER_HOSTNAME}/api/result`, resultData);
-                console.log("Server Response:", response);
-            } catch (error) {
-                console.error("Detailed error:", {
-                    message: error.message,
-                    stack: error.stack,
-                    response: error.response
-                });
-            }
-        };
-
-        if(result && result.length > 0) {
-            console.log("Calling storeResult");
-            storeResult();
-        } else {
-            console.log("No results to store. Result data:", result);
+        if (result?.length && username && email) {
+            storeResult()
+                .then(res => console.log("Result stored successfully:", res))
+                .catch(err => console.error("Failed to store result:", err));
         }
-    }, [queue, result, username, email, department]);
+    }, []);
 
     return (
-        <div className="container">
-            <h1 className="title text-light">Feedback</h1>
-            <div className="feedback-form">
-                <h2>Please provide your feedback</h2>
-                {/* Add your feedback form here */}
-            </div>
+        <div className='container'>
+            <h2 className='title text-light'>Quiz Completed!</h2>
+            {/* Add more UI elements as needed */}
         </div>
     );
 }

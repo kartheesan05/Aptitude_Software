@@ -24,16 +24,26 @@ export async function getServerData(url) {
 }
 
 /** post server data */
-export async function postServerData(url, result) {
+export const postServerData = async (url, result) => {
     try {
-        console.log('Posting to URL:', url);
-        console.log('Posting data:', result);
-        
-        const response = await axios.post(url, result);
-        console.log("Server Response:", response.data);
-        return response.data;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(result)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Server error response:", errorData);
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
     } catch (error) {
-        console.error("Error posting result:", error.response?.data || error.message);
+        console.error("Error in postServerData:", error);
         throw error;
     }
 }

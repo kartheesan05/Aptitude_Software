@@ -171,4 +171,85 @@ router.get('/:departmentId', async (req, res) => {
     }
 });
 
+// Routes for different question types
+router.post('/aptitude-questions', async (req, res) => {
+    try {
+        const { question, options, correctAnswer, category } = req.body;
+        
+        const newQuestion = new AptitudeQuestion({
+            category: 'aptitude',
+            subCategory: category,  // This preserves the subcategory
+            question,
+            options,
+            correctAnswer
+        });
+
+        await newQuestion.save();
+        res.status(201).json({ message: 'Question added successfully' });
+    } catch (error) {
+        console.error('Error adding aptitude question:', error);
+        res.status(500).json({ message: 'Error adding question' });
+    }
+});
+
+router.post('/verbal-questions', async (req, res) => {
+    try {
+        const { question, options, correctAnswer, category } = req.body;
+        
+        const newQuestion = new VerbalQuestion({
+            category: 'verbal',
+            subCategory: category,  // This preserves the subcategory
+            question,
+            options,
+            correctAnswer
+        });
+
+        await newQuestion.save();
+        res.status(201).json({ message: 'Question added successfully' });
+    } catch (error) {
+        console.error('Error adding verbal question:', error);
+        res.status(500).json({ message: 'Error adding question' });
+    }
+});
+
+router.post('/programming-questions', async (req, res) => {
+    try {
+        const { question, options, correctAnswer, category } = req.body;
+        
+        const newQuestion = new ProgrammingQuestion({
+            category: 'programming',
+            subCategory: category,  // This preserves the subcategory
+            question,
+            options,
+            correctAnswer
+        });
+
+        await newQuestion.save();
+        res.status(201).json({ message: 'Question added successfully' });
+    } catch (error) {
+        console.error('Error adding programming question:', error);
+        res.status(500).json({ message: 'Error adding question' });
+    }
+});
+
+router.post('/core-questions', async (req, res) => {
+    try {
+        const { question, options, correctAnswer, category } = req.body;
+        
+        const newQuestion = new CoreQuestion({
+            category: 'core',
+            subCategory: category,  // This preserves the subcategory for department-specific questions
+            question,
+            options,
+            correctAnswer
+        });
+
+        await newQuestion.save();
+        res.status(201).json({ message: 'Question added successfully' });
+    } catch (error) {
+        console.error('Error adding core question:', error);
+        res.status(500).json({ message: 'Error adding question' });
+    }
+});
+
 export { router };

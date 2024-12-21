@@ -1,0 +1,76 @@
+.feedback-form {
+    width: 100%;
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.star-rating {
+    margin: 1.5rem 0;
+}
+
+.star-rating p {
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-size: 1rem;
+}
+
+.star {
+    font-size: 2rem;
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    margin: 0 2px;
+}
+
+.star.selected {
+    color: #ffd700;
+}
+
+.star:hover {
+    color: #ffd700;
+}
+
+.comment-section {
+    margin: 1.5rem 0;
+}
+
+.comment-section textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.comment-section textarea:focus {
+    outline: none;
+    border-color: #1eb2a6;
+}
+
+.error-msg {
+    color: #ff3333;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.btn {
+    width: 100%;
+    padding: 1rem;
+    background: #1eb2a6;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s ease;
+}
+
+.btn:hover {
+    background: #189a90;
+}

@@ -1,14 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit"
 
 export const resultReducer = (state = {
-    queue: [],
-    answers: [],
-    trace: 0,
-    result: [],
     username: '',
     email: '',
+    regNo: '',
     department: '',
-    departmentId: ''
+    departmentId: '',
+    result: new Array(50).fill(undefined)
 }, action) => {
     switch (action.type) {
         case 'SET_USER_DETAILS':
@@ -16,13 +14,9 @@ export const resultReducer = (state = {
                 ...state,
                 username: action.payload.username,
                 email: action.payload.email,
+                regNo: action.payload.regNo,
                 department: action.payload.department,
                 departmentId: action.payload.departmentId
-            }
-        case 'SET_RESULT':
-            return {
-                ...state,
-                result: [...state.result, action.payload]
             }
         case 'UPDATE_RESULT':
             const { trace, checked } = action.payload;
@@ -32,50 +26,36 @@ export const resultReducer = (state = {
                 ...state,
                 result: newResult
             }
-        case 'PUSH_RESULT':
-            return {
-                ...state,
-                result: [...state.result, action.payload]
-            }
         case 'RESET_RESULT':
             return {
-                ...state,
-                result: [],
                 username: '',
                 email: '',
+                regNo: '',
                 department: '',
-                departmentId: ''
+                departmentId: '',
+                result: new Array(50).fill(undefined)
             }
         default:
             return state;
     }
 }
 
-export const setUserDetails = (payload) => ({
-    type: 'SET_USER_DETAILS',
-    payload
-});
+export const setUserDetails = (userDetails) => {
+    return {
+        type: 'SET_USER_DETAILS',
+        payload: userDetails
+    }
+}
 
-export const setResult = (result) => ({
-    type: 'SET_RESULT',
-    payload: result
-});
+export const updateResult = (payload) => {
+    return {
+        type: 'UPDATE_RESULT',
+        payload: payload
+    }
+}
 
-export const updateResult = (index) => ({
-    type: 'UPDATE_RESULT',
-    payload: index
-});
-
-export const pushResultAction = (result) => ({
-    type: 'PUSH_RESULT',
-    payload: result
-});
-
-export const resetResultAction = () => ({
-    type: 'RESET_RESULT'
-});
-
-export const updateResultAction = (payload) => ({
-    type: 'UPDATE_RESULT',
-    payload
-});
+export const resetResultAction = () => {
+    return {
+        type: 'RESET_RESULT'
+    }
+}

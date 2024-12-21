@@ -11,7 +11,6 @@ import AdminLogin from './AdminLogin';
 import AdminDashboard from './AdminDashboard';
 import { CheckUserExist } from '../helper/helper';
 import QuestionUpload from './QuestionUpload';
-import TabDetection from './TabDetection';
 
 
 /** React Routes */
@@ -27,9 +26,6 @@ const router = createBrowserRouter([
   {
     path : '/quiz',
     element : <Quiz />
-  },
-  {
-    element : <TabDetection />
   },
   {
     path : '/result',

@@ -3,15 +3,14 @@ const { Schema } = mongoose;
 
 /** result model */
 const resultSchema = new Schema({
-    username: { type: String },
-    email: { type: String },
-    regNo: { type: String, unique: true },
+    username: { type: String, required: true },
+    email: { type: String, required: true },
+    regNo: { type: String, required: true, unique: true },
     dept: { type: String },
-    result: { type: Array },
-    attempts: { type: Number, default: 0 },
     points: { type: Number, default: 0 },
+    attempts: { type: Number, default: 0 },
     totalQuestions: { type: Number },
-    createdAt: { type: Date, default: Date.now }
+    result: { type: Array, default: [] }
 });
 
-export default mongoose.model('result', resultSchema);
+export default mongoose.model('Result', resultSchema);

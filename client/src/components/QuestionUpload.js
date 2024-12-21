@@ -90,7 +90,7 @@ export default function QuestionUpload() {
         default:
           throw new Error('Please select a question type');
       }
-
+ 
       const response = await axios.post(`http://localhost:5000/api/${endpoint}`, {
         ...newQuestion,
         category: selectedCategory

@@ -19,16 +19,32 @@ export default function Result() {
     } = useSelector(state => state);
 
     useEffect(() => {
-        console.log("Result Component State:", {
-            queue, answers, result, username, email, regNo, department, departmentId
+        console.log("Initial state:", {
+            queue, 
+            answers, 
+            result, 
+            username, 
+            email, 
+            regNo, 
+            department
         });
-    }, [queue, answers, result, username, email, regNo, department, departmentId]);
+    }, []);
 
     // Calculate total questions and correct answers
     const totalQuestions = queue.length;
     const correctAnswers = result.reduce((score, answer, index) => {
-        return score + (answer === answers[index] ? 1 : 0);
+        // Only count if both answer and correct answer exist
+        if (answer !== undefined && answers[index] !== undefined) {
+            // Compare user's answer with correct answer
+            const isCorrect = Number(answer) === Number(answers[index]);
+            console.log(`Question ${index + 1}: User answer: ${answer}, Correct answer: ${answers[index]}, Correct? ${isCorrect}`);
+            return score + (isCorrect ? 1 : 0);
+        }
+        return score;
     }, 0);
+
+    // Count only questions that were actually answered
+    const actualAttempts = result.filter(ans => ans !== undefined).length;
 
     /** store result in the database */
     useEffect(() => {
@@ -42,13 +58,24 @@ export default function Result() {
                         department,
                         departmentId,
                         result: result,
-                        attempts: 1,  // Since we're only allowing one attempt
-                        points: correctAnswers, // One point per correct answer
+                        attempts: actualAttempts,  // Use actual number of answered questions
+                        points: correctAnswers,    // Use calculated correct answers
                         totalQuestions
                     };
-    
-                    console.log("Publishing result data:", resultData);
-                    const response = await postServerData(`${process.env.REACT_APP_SERVER_HOSTNAME}/api/result`, resultData);
+
+                    console.log("Publishing result with details:", {
+                        totalQuestions,
+                        actualAttempts,
+                        correctAnswers,
+                        result,
+                        answers
+                    });
+                    
+                    const response = await postServerData(
+                        `${process.env.REACT_APP_SERVER_HOSTNAME}/api/result`, 
+                        resultData
+                    );
+                    
                     console.log("Server response:", response);
                 }
             } catch (error) {
@@ -57,7 +84,7 @@ export default function Result() {
         };
 
         publishResult();
-    }, []);
+    }, []); // Empty dependency array to run once
 
     // Reset the quiz when the user clicks restart
     function onRestart() {
@@ -87,8 +114,12 @@ export default function Result() {
                     <span className='bold'>{totalQuestions}</span>
                 </div>
                 <div className='flex'>
-                    <span>Score : </span>
-                    <span className='bold'>{correctAnswers} out of {totalQuestions}</span>
+                    <span>Questions Attempted : </span>
+                    <span className='bold'>{actualAttempts}</span>
+                </div>
+                <div className='flex'>
+                    <span>Correct Answers : </span>
+                    <span className='bold'>{correctAnswers}</span>
                 </div>
             </div>
 

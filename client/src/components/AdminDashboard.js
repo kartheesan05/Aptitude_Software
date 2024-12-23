@@ -10,11 +10,13 @@ export default function AdminDashboard() {
     const [resetLoading, setResetLoading] = useState(false);
     const [newCode, setNewCode] = useState('');
     const [currentCode, setCurrentCode] = useState('');
+    const [hasActiveSession, setHasActiveSession] = useState(false);
 
     const searchUser = async () => {
         setError('');
         setUserData(null);
         setLoading(true);
+        setHasActiveSession(false);
 
         try {
             if (!email?.trim()) {
@@ -22,14 +24,38 @@ export default function AdminDashboard() {
                 return;
             }
 
-            const response = await axios.get('http://localhost:5000/api/users/search', {
+            // Check active session first
+            const sessionResponse = await axios.get('http://localhost:5000/api/users/check-active-session', {
                 params: { email: email.trim() }
             });
 
-            if (response.data) {
-                setUserData(response.data);
+            const hasActiveSession = sessionResponse.data.hasActiveSession;
+            setHasActiveSession(hasActiveSession);
+
+            if (hasActiveSession) {
+                // If there's an active session, use that data
+                const sessionDetails = sessionResponse.data.sessionDetails;
+                setUserData({
+                    email: email.trim(),
+                    status: 'in_progress',
+                    regNo: sessionDetails.regNo,
+                    startTime: sessionDetails.startTime,
+                    sessionExpiresAt: sessionDetails.expiresAt
+                });
             } else {
-                setError('No user found');
+                // Only try to get completed test data if there's no active session
+                try {
+                    const response = await axios.get('http://localhost:5000/api/users/search', {
+                        params: { email: email.trim() }
+                    });
+                    setUserData(response.data);
+                } catch (searchError) {
+                    if (searchError.response?.status === 404) {
+                        setError('No test data found for this user');
+                    } else {
+                        throw searchError;
+                    }
+                }
             }
         } catch (error) {
             console.error("Search error:", error);
@@ -108,6 +134,29 @@ export default function AdminDashboard() {
         }
     };
 
+    const clearActiveSession = async () => {
+        try {
+            if (!userData?.email) return;
+
+            if (!window.confirm('Are you sure you want to clear this user\'s active session? This will allow them to start a new test.')) {
+                return;
+            }
+
+            await axios.post('http://localhost:5000/api/users/admin-clear-session', {
+                email: userData.email
+            });
+
+            alert('Active session cleared successfully');
+            setHasActiveSession(false);
+            // Instead of searching again, just clear the user data
+            setUserData(null);
+            setEmail(''); // Optional: clear the search field
+        } catch (error) {
+            console.error("Error clearing session:", error);
+            alert(error.response?.data?.message || 'Error clearing session');
+        }
+    };
+
     useEffect(() => {
         getCurrentCode();
     }, []);
@@ -145,10 +194,6 @@ export default function AdminDashboard() {
                     <h2>User Details</h2>
                     <div className="details-grid">
                         <div className="detail-item">
-                            <strong>Name:</strong> 
-                            <span>{userData.name}</span>
-                        </div>
-                        <div className="detail-item">
                             <strong>Email:</strong> 
                             <span>{userData.email}</span>
                         </div>
@@ -156,14 +201,16 @@ export default function AdminDashboard() {
                             <strong>Registration Number:</strong> 
                             <span>{userData.regNo}</span>
                         </div>
-                        <div className="detail-item">
-                            <strong>Department:</strong> 
-                            <span>{userData.department}</span>
-                        </div>
+                        {userData.department && (
+                            <div className="detail-item">
+                                <strong>Department:</strong> 
+                                <span>{userData.department}</span>
+                            </div>
+                        )}
                         <div className="detail-item">
                             <strong>Status:</strong> 
                             <span className={`status-${userData.status}`}>
-                                {userData.status}
+                                {userData.status === 'in_progress' ? 'Test In Progress' : userData.status}
                             </span>
                         </div>
                         {userData.status === 'completed' && (
@@ -178,8 +225,41 @@ export default function AdminDashboard() {
                                 </div>
                             </>
                         )}
+                        {userData.status === 'in_progress' && (
+                            <div className="detail-item">
+                                <strong>Started At:</strong> 
+                                <span>{new Date(userData.startTime).toLocaleString()}</span>
+                            </div>
+                        )}
                     </div>
                     
+                    {userData.status === 'in_progress' && (
+                        <div className="warning-message" style={{
+                            backgroundColor: '#fff3cd',
+                            color: '#856404',
+                            padding: '10px',
+                            marginTop: '10px',
+                            borderRadius: '4px'
+                        }}>
+                            <p>This user has an active test session.</p>
+                            <button 
+                                onClick={clearActiveSession}
+                                className="warning-btn"
+                                style={{
+                                    backgroundColor: '#856404',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '5px 10px',
+                                    borderRadius: '3px',
+                                    marginTop: '5px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Clear Active Session
+                            </button>
+                        </div>
+                    )}
+
                     {userData.status === 'completed' && (
                         <div className="action-buttons">
                             <button 

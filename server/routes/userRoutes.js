@@ -18,25 +18,51 @@ router.get('/search', async (req, res) => {
             });
         }
 
-        // Find user by email
-        const user = await Result.findOne({ email: email.trim() });
+        // Check both Result and ActiveSession collections
+        const completedUser = await Result.findOne({ email: email.trim() });
+        const activeUser = await ActiveSession.findOne({ email: email.trim() });
 
-        if (!user) {
+        console.log("Search results:", {
+            completedUser: !!completedUser,
+            activeUser: !!activeUser
+        });
+
+        // If user not found in either collection
+        if (!completedUser && !activeUser) {
+            console.log("No user found in either collection");
             return res.status(404).json({ 
                 message: `No user found with email: ${email}`
             });
         }
 
-        // Send back user data
-        const userData = {
-            name: user.username,
-            email: user.email,
-            regNo: user.regNo,  // Keep regNo in response
-            department: user.dept,
-            status: user.attempts > 0 ? 'completed' : 'not_started',
-            score: user.points ? `${user.points}` : '0',
-            totalQuestions: 50
+        // Prepare response data
+        let userData = {
+            email: email,
+            status: completedUser ? 'completed' : (activeUser ? 'in_progress' : 'not_found')
         };
+
+        // Add completed test data if available
+        if (completedUser) {
+            userData = {
+                ...userData,
+                name: completedUser.username,
+                regNo: completedUser.regNo,
+                department: completedUser.dept,
+                score: completedUser.points ? `${completedUser.points}` : '0',
+                totalQuestions: completedUser.totalQuestions || 50
+            };
+        }
+
+        // Add active session data if available
+        if (activeUser) {
+            console.log("Active user found:", activeUser);
+            userData = {
+                ...userData,
+                regNo: activeUser.regNo,
+                startTime: activeUser.startTime,
+                sessionExpiresAt: activeUser.expiresAt
+            };
+        }
 
         console.log("\nSending user data:", userData);
         res.json(userData);
@@ -276,6 +302,36 @@ router.post('/clear-session', async (req, res) => {
         await ActiveSession.findOneAndDelete({ email, regNo });
         res.json({ message: 'Session cleared successfully' });
 
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Check if user has an active session (admin route)
+router.get('/check-active-session', async (req, res) => {
+    try {
+        const { email } = req.query;
+        const activeSession = await ActiveSession.findOne({ email });
+        
+        res.json({ 
+            hasActiveSession: !!activeSession,
+            sessionDetails: activeSession
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Admin route to clear active session
+router.post('/admin-clear-session', async (req, res) => {
+    try {
+        const { email } = req.body;
+        await ActiveSession.findOneAndDelete({ email });
+        
+        res.json({ 
+            message: 'Active session cleared successfully',
+            status: 'success'
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

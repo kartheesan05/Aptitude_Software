@@ -1,6 +1,7 @@
 import express from 'express';
 import Result from '../models/resultSchema.js';
 import AccessCode from '../models/accessCodeSchema.js';
+import ActiveSession from '../models/activeSession.js';
 const router = express.Router();
 
 // Search user by email only
@@ -209,6 +210,74 @@ router.post('/admin/init-code', async (req, res) => {
         }
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Check if user has an active session or has completed test
+router.post('/check-session', async (req, res) => {
+    try {
+        const { email, regNo } = req.body;
+
+        // First check if user has already completed the test
+        const existingResult = await Result.findOne({ email, regNo });
+        if (existingResult) {
+            return res.json({ 
+                canTakeTest: false, 
+                hasActiveSession: false,
+                message: 'User has already completed the test'
+            });
+        }
+
+        // Then check for active session
+        const activeSession = await ActiveSession.findOne({ email, regNo });
+        if (activeSession) {
+            return res.json({ 
+                canTakeTest: true, 
+                hasActiveSession: true,
+                message: 'User has an active session'
+            });
+        }
+
+        return res.json({ 
+            canTakeTest: true, 
+            hasActiveSession: false,
+            message: 'User can take test'
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Create a new session when user starts test
+router.post('/create-session', async (req, res) => {
+    try {
+        const { email, regNo } = req.body;
+        
+        const newSession = new ActiveSession({
+            email,
+            regNo,
+            startTime: new Date()
+        });
+
+        await newSession.save();
+        res.json({ message: 'Session created successfully' });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Clear session when test is completed
+router.post('/clear-session', async (req, res) => {
+    try {
+        const { email, regNo } = req.body;
+        
+        await ActiveSession.findOneAndDelete({ email, regNo });
+        res.json({ message: 'Session cleared successfully' });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 });
 

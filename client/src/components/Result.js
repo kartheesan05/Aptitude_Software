@@ -5,6 +5,7 @@ import ResultTable from './ResultTable';
 import { useDispatch, useSelector } from 'react-redux';
 import { attempts_Number } from '../helper/helper';
 import { postServerData } from '../helper/helper';
+import axios from 'axios';
 
 import { resetAllAction } from '../redux/question_reducer';
 import { resetResultAction } from '../redux/result_reducer';
@@ -58,24 +59,23 @@ export default function Result() {
                         department,
                         departmentId,
                         result: result,
-                        attempts: actualAttempts,  // Use actual number of answered questions
-                        points: correctAnswers,    // Use calculated correct answers
+                        attempts: actualAttempts,
+                        points: correctAnswers,
                         totalQuestions
                     };
 
-                    console.log("Publishing result with details:", {
-                        totalQuestions,
-                        actualAttempts,
-                        correctAnswers,
-                        result,
-                        answers
-                    });
-                    
+                    // First submit the result
                     const response = await postServerData(
                         `${process.env.REACT_APP_SERVER_HOSTNAME}/api/result`, 
                         resultData
                     );
                     
+                    // Then clear the user's active session
+                    await axios.post('http://localhost:5000/api/users/clear-session', {
+                        email,
+                        regNo
+                    });
+
                     console.log("Server response:", response);
                 }
             } catch (error) {
@@ -84,7 +84,7 @@ export default function Result() {
         };
 
         publishResult();
-    }, []); // Empty dependency array to run once
+    }, []);
 
     // Reset the quiz when the user clicks restart
     function onRestart() {

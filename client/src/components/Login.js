@@ -77,12 +77,17 @@ export default function Login() {
         }
 
         try {
-            const checkResponse = await axios.post('http://localhost:5000/api/users/check-user', {
+            const sessionResponse = await axios.post('http://localhost:5000/api/users/check-session', {
                 email: formData.email,
                 regNo: formData.regNo
             });
 
-            if (!checkResponse.data.canTakeTest) {
+            if (sessionResponse.data.hasActiveSession) {
+                setError('This user already has an active test session in another window/browser. Please complete the test in the original session.');
+                return;
+            }
+
+            if (!sessionResponse.data.canTakeTest) {
                 setError('You have already taken this test. Each user is allowed only one attempt.');
                 return;
             }
@@ -96,6 +101,11 @@ export default function Login() {
                 return;
             }
 
+            await axios.post('http://localhost:5000/api/users/create-session', {
+                email: formData.email,
+                regNo: formData.regNo
+            });
+
             dispatch(setUserDetails({
                 username: formData.username,
                 email: formData.email,
@@ -108,11 +118,7 @@ export default function Login() {
             
         } catch (error) {
             console.error("Login error:", error);
-            if (error.response?.data?.message === 'User has already taken the test') {
-                setError('You have already taken this test. Each user is allowed only one attempt.');
-            } else {
-                setError(error.response?.data?.message || 'An error occurred. Please try again.');
-            }
+            setError(error.response?.data?.message || 'An error occurred. Please try again.');
         }
     };
 

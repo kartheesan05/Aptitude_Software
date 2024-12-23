@@ -5,12 +5,16 @@ const { Schema } = mongoose;
 const resultSchema = new Schema({
     username: { type: String, required: true },
     email: { type: String, required: true },
-    regNo: { type: String, required: true, unique: true },
-    dept: { type: String },
-    points: { type: Number, default: 0 },
-    attempts: { type: Number, default: 0 },
-    totalQuestions: { type: Number },
-    result: { type: Array, default: [] }
+    regNo: { type: String, required: true },
+    department: { type: String, required: true },
+    departmentId: { type: String, required: true },
+    points: { type: Number, required: true },
+    attempts: { type: Number, required: true },
+    totalQuestions: { type: Number, required: true },
+    result: { type: Array, required: true },
+    achievedOn: { type: Date, default: Date.now }
 });
+
+resultSchema.index({ email: 1, regNo: 1 }, { unique: true });
 
 export default mongoose.model('Result', resultSchema);

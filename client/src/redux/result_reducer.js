@@ -18,6 +18,11 @@ export const resultReducer = (state = {
                 department: action.payload.department,
                 departmentId: action.payload.departmentId
             }
+        case 'SET_RESULT':
+            return {
+                ...state,
+                result: action.payload
+            }
         case 'UPDATE_RESULT':
             const { trace, checked } = action.payload;
             const newResult = [...state.result];
@@ -28,12 +33,8 @@ export const resultReducer = (state = {
             }
         case 'RESET_RESULT':
             return {
-                username: '',
-                email: '',
-                regNo: '',
-                department: '',
-                departmentId: '',
-                result: new Array(50).fill(undefined)
+                ...state,
+                result: []
             }
         default:
             return state;

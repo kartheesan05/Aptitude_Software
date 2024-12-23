@@ -8,6 +8,7 @@ import TabDetection from './TabDetection'
 
 export default function Quiz() {
     const [check, setChecked] = useState(undefined)
+    const [isFullscreen, setIsFullscreen] = useState(false)
     const dispatch = useDispatch();
     const navigate = useNavigate();
     
@@ -18,12 +19,49 @@ export default function Quiz() {
 
     const [{ isLoading, serverError }] = useFetchQestion();
 
+    const enterFullscreen = async () => {
+        try {
+            const element = document.documentElement;
+            if (element.requestFullscreen) {
+                await element.requestFullscreen();
+            } else if (element.webkitRequestFullscreen) {
+                await element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) {
+                await element.msRequestFullscreen();
+            }
+            setIsFullscreen(true);
+        } catch (error) {
+            console.log('Fullscreen request failed');
+        }
+    };
+
     useEffect(() => {
         if(!username) {
             navigate('/');
             return;
         }
         dispatch({ type: 'SET_TRACE', payload: 0 });
+        dispatch({ type: 'SET_RESULT', payload: [] });
+        setChecked(undefined);
+        enterFullscreen();
+    }, []);
+
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+        };
     }, []);
 
     useEffect(() => {
@@ -64,7 +102,6 @@ export default function Quiz() {
     }
 
     function onSelect(i) {
-        console.log("Selected answer for question", trace + 1, ":", i);
         setChecked(i);
         dispatch(updateResult({ trace, checked: i }));
     }
@@ -75,6 +112,34 @@ export default function Quiz() {
 
     return (
         <div className='container'>
+            {!isFullscreen && (
+                <div className="fullscreen-notice" style={{
+                    backgroundColor: '#fff3cd',
+                    color: '#856404',
+                    padding: '10px',
+                    marginBottom: '15px',
+                    borderRadius: '4px',
+                    textAlign: 'center'
+                }}>
+                    <p>You exited fullscreen mode. 
+                        <button 
+                            onClick={enterFullscreen}
+                            style={{
+                                marginLeft: '10px',
+                                padding: '5px 10px',
+                                border: 'none',
+                                borderRadius: '3px',
+                                backgroundColor: '#856404',
+                                color: 'white',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Return to Fullscreen
+                        </button>
+                    </p>
+                </div>
+            )}
+
             <TabDetection />
 
             <div className='questions'>

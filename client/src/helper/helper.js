@@ -26,22 +26,8 @@ export async function getServerData(url) {
 /** post server data */
 export const postServerData = async (url, result) => {
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(result)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Server error response:", errorData);
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return data;
+        const response = await axios.post(url, result);
+        return response.data;
     } catch (error) {
         console.error("Error in postServerData:", error);
         throw error;

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { setUserDetails } from '../redux/result_reducer';
+import { resetResultAction, setUserDetails } from '../redux/result_reducer';
+import { resetAllAction } from '../redux/question_reducer';
 import '../styles/Login.css';
 import axios from 'axios';
 
@@ -77,6 +78,9 @@ export default function Login() {
         }
 
         try {
+            dispatch(resetAllAction());
+            dispatch(resetResultAction());
+
             const sessionResponse = await axios.post('http://localhost:5000/api/users/check-session', {
                 email: formData.email,
                 regNo: formData.regNo

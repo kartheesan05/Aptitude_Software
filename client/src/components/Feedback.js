@@ -111,13 +111,12 @@ export default function Feedback() {
 
     const handleFeedbackSubmit = async () => {
         try {
-            // Validate ratings
+            // Validation checks
             if (feedbackData.q1 === 0 || feedbackData.q2 === 0 || feedbackData.q3 === 0) {
                 setError('Please rate all questions');
                 return;
             }
 
-            // Validate comments
             if (!feedbackData.comments.trim()) {
                 setError('Please provide your comments');
                 return;
@@ -137,8 +136,12 @@ export default function Feedback() {
                 comments: feedbackData.comments.trim()
             });
 
+            // Remove event listeners before navigation
+            window.removeEventListener('beforeunload', () => {});
+            window.removeEventListener('popstate', () => {});
+
             // Navigate to login page after successful submission
-            navigate('/');
+            navigate('/', { replace: true });
 
         } catch (error) {
             console.error('Feedback submission error:', error);
@@ -153,6 +156,55 @@ export default function Feedback() {
                 .catch(err => console.error("Failed to store result:", err));
         }
     }, []);
+
+    useEffect(() => {
+        // Prevent leaving the page without submitting feedback
+        const preventLeaving = (e) => {
+            const message = "You haven't submitted your feedback yet. Your responses are important to us. Are you sure you want to leave?";
+            e.preventDefault();
+            e.returnValue = message;
+            return message;
+        };
+
+        const preventBackNavigation = (e) => {
+            e.preventDefault();
+            alert("Please complete and submit your feedback before leaving. If you need to exit, use the submit button.");
+            // Push a new entry to prevent leaving the feedback page
+            window.history.pushState(null, null, window.location.pathname);
+        };
+
+        // Handle both browser back button and page refresh/close
+        window.addEventListener('beforeunload', preventLeaving);
+        
+        // Handle browser back button specifically
+        window.history.pushState(null, null, window.location.pathname);
+        window.addEventListener('popstate', preventBackNavigation);
+
+        // Check if user came from quiz or was redirected due to tab switching
+        const checkNavigation = async () => {
+            try {
+                // You might want to add an API endpoint to check the user's test status
+                const response = await axios.get(`http://localhost:5000/api/users/check-test-status`, {
+                    params: { email, regNo }
+                });
+
+                if (!response.data.hasCompletedTest) {
+                    navigate('/', { replace: true });
+                }
+            } catch (error) {
+                console.error('Navigation check error:', error);
+                navigate('/', { replace: true });
+            }
+        };
+
+        checkNavigation();
+
+        // Cleanup function
+        return () => {
+            window.removeEventListener('beforeunload', preventLeaving);
+            window.removeEventListener('popstate', preventBackNavigation);
+        };
+    }, [navigate, email, regNo]);
 
     return (
         <div className='container'>

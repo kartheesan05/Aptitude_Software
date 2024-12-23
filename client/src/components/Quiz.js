@@ -9,6 +9,7 @@ import TabDetection from './TabDetection'
 export default function Quiz() {
     const [check, setChecked] = useState(undefined)
     const [isFullscreen, setIsFullscreen] = useState(false)
+    const [showConfirmation, setShowConfirmation] = useState(false);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     
@@ -80,6 +81,28 @@ export default function Quiz() {
         setChecked(result[trace]);
     }, [trace]);
 
+    useEffect(() => {
+        const preventBackButton = (e) => {
+            e.preventDefault();
+            e.returnValue = '';
+            alert("Please use the navigation buttons within the quiz. Don't use browser navigation.");
+        };
+
+        const preventBackNavigation = () => {
+            alert("Please use the navigation buttons within the quiz. Don't use browser navigation.");
+            navigate('/quiz', { replace: true });
+        };
+
+        window.addEventListener('beforeunload', preventBackButton);
+        window.history.pushState(null, null, window.location.pathname);
+        window.addEventListener('popstate', preventBackNavigation);
+
+        return () => {
+            window.removeEventListener('beforeunload', preventBackButton);
+            window.removeEventListener('popstate', preventBackNavigation);
+        };
+    }, [navigate]);
+
     function onNext(){
         if(trace < queue?.length){
             if(check !== undefined){
@@ -87,7 +110,12 @@ export default function Quiz() {
             }
             
             if(trace === queue?.length - 1){
-                navigate('/feedback');
+                const unanswered = getUnansweredQuestions();
+                if (unanswered.length > 0) {
+                    setShowConfirmation(true);
+                } else {
+                    navigate('/feedback');
+                }
                 return;
             }
 
@@ -105,6 +133,13 @@ export default function Quiz() {
         setChecked(i);
         dispatch(updateResult({ trace, checked: i }));
     }
+
+    const getUnansweredQuestions = () => {
+        return result
+            .map((ans, index) => ({ index: index + 1, answered: ans !== undefined }))
+            .filter(q => !q.answered)
+            .map(q => q.index);
+    };
 
     if(isLoading) return <h3 className='text-light'>isLoading</h3>
     if(serverError) return <h3 className='text-light'>{serverError || "Unknown Error"}</h3>
@@ -142,8 +177,96 @@ export default function Quiz() {
 
             <TabDetection />
 
+            {showConfirmation && (
+            <div className="confirmation-dialog" style={{
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                backgroundColor: 'white',
+                padding: '20px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                zIndex: 1000,
+                maxWidth: '90%',
+                width: '400px',
+            }}>
+                <h3 style={{
+                    marginBottom: '15px',
+                    color: '#007bff',
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                }}>
+                    Unanswered Questions
+                </h3>
+                <p style={{
+                    color: '#000', 
+                    fontSize: '16px',
+                }}>
+                    You have not answered the following questions:
+                    <br />
+                    <span style={{
+                        fontWeight: 'bold',
+                        display: 'block',
+                        marginTop: '10px',
+                        color: '#000', 
+                        fontSize: '16px',
+                    }}>
+                        {getUnansweredQuestions().join(', ')}
+                    </span>
+                </p>
+                <div style={{
+                    marginTop: '20px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                }}>
+                    <button
+                        onClick={() => setShowConfirmation(false)}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#007bff',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.2s',
+                        }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = '#0056b3'}
+                        onMouseOut={(e) => e.target.style.backgroundColor = '#007bff'}
+                    >
+                        Continue Answering
+                    </button>
+                    <button
+                        onClick={() => navigate('/feedback')}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.2s',
+                        }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = '#c82333'}
+                        onMouseOut={(e) => e.target.style.backgroundColor = '#dc3545'}
+                    >
+                        Submit Anyway
+                    </button>
+                </div>
+            </div>
+)}
+
+
             <div className='questions'>
-                <h2 className='text-light'>{queue[trace]?.question}</h2>
+                <h2 className='text-light'>
+                    <span style={{ 
+                        marginRight: '10px',
+                        fontWeight: 'normal'
+                    }}>
+                        {trace + 1}) 
+                    </span>
+                    {queue[trace]?.question}
+                </h2>
 
                 <ul key={`question-${trace}`}>
                     {queue[trace]?.options?.map((q, i) => (

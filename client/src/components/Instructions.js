@@ -17,6 +17,28 @@ export default function Instructions() {
         sessionStorage.removeItem('quizState');
     }, []);
 
+    useEffect(() => {
+        const preventBackButton = (e) => {
+            e.preventDefault();
+            e.returnValue = '';
+            alert("Please use the provided buttons to navigate. Don't use browser navigation.");
+        };
+
+        const preventBackNavigation = () => {
+            alert("Please use the provided buttons to navigate. Don't use browser navigation.");
+            navigate('/instructions', { replace: true });
+        };
+
+        window.addEventListener('beforeunload', preventBackButton);
+        window.history.pushState(null, null, window.location.pathname);
+        window.addEventListener('popstate', preventBackNavigation);
+
+        return () => {
+            window.removeEventListener('beforeunload', preventBackButton);
+            window.removeEventListener('popstate', preventBackNavigation);
+        };
+    }, [navigate]);
+
     const startQuiz = () => {
         if(!username){
             navigate('/');

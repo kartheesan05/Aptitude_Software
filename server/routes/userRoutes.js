@@ -337,4 +337,26 @@ router.post('/admin-clear-session', async (req, res) => {
     }
 });
 
+// Add this new route to check test status
+router.get('/check-test-status', async (req, res) => {
+    try {
+        const { email, regNo } = req.query;
+        
+        // Check if the user has a completed test
+        const completedTest = await Result.findOne({ email, regNo });
+        
+        // Check if user has an active session
+        const activeSession = await ActiveSession.findOne({ email, regNo });
+
+        res.json({
+            hasCompletedTest: !!completedTest || !activeSession,
+            status: completedTest ? 'completed' : 
+                    activeSession ? 'in_progress' : 'not_found'
+        });
+    } catch (error) {
+        console.error('Test status check error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 export { router };

@@ -91,20 +91,59 @@ body {
 }
 
 .error-msg {
-    color: #ff3333;
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
     text-align: center;
-    margin-bottom: 10px;
+    font-weight: bold;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .input-group {
-    margin-bottom: 15px;
+    position: relative;
+    margin-bottom: 20px;
 }
 
-.error {
-    color: #ff3333;
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.input-group .error {
+    color: #ff2a66;
     font-size: 0.8em;
-    margin-top: 5px;
-    text-align: left;
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+    margin-top: 2px;
+}
+
+.input-group input.error,
+.input-group select.error {
+    border-color: #ff2a66;
+}
+
+.error-msg {
+    color: #ff2a66;
+    text-align: center;
+    margin-bottom: 15px;
 }
 
 .textbox input, .textbox select {

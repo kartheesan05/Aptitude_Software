@@ -9,10 +9,6 @@ const feedbackSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    regNo: {
-        type: String,
-        required: false
-    },
     ratings: {
         q1: { type: Number, required: true, min: 1, max: 5 },
         q2: { type: Number, required: true, min: 1, max: 5 },

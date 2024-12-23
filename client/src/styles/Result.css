@@ -116,3 +116,39 @@ table {
 .start .btn:hover {
     background-color: #13a6b0;
 }
+
+.feedback-section {
+    margin-top: 2rem;
+}
+
+.star-rating {
+    margin: 1rem 0;
+}
+
+.star {
+    font-size: 2rem;
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    margin: 0 2px;
+}
+
+.star.selected {
+    color: #ffd700;
+}
+
+.feedback-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-top: 1rem;
+    resize: vertical;
+}
+
+.error-msg {
+    color: #ff2a66;
+    margin-bottom: 1rem;
+    text-align: center;
+}

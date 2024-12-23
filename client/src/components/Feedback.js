@@ -1,12 +1,49 @@
-import React, { useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { postServerData } from '../helper/helper';
+import React, { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+import { postServerData } from '../helper/helper'
+import axios from 'axios'
+
+const StarRating = ({ rating, setRating, question }) => {
+    return (
+        <div className="star-rating">
+            <p>{question}</p>
+            {[...Array(5)].map((_, index) => {
+                const starValue = index + 1;
+                return (
+                    <span
+                        key={index}
+                        className={`star ${starValue <= rating ? 'selected' : ''}`}
+                        onClick={() => setRating(starValue)}
+                    >
+                        ★
+                    </span>
+                );
+            })}
+        </div>
+    );
+};
 
 export default function Feedback() {
+    const navigate = useNavigate();
+    const [error, setError] = useState('');
     const { 
         questions: { queue, answers },
         result: { result, username, email, regNo, department, departmentId }
     } = useSelector(state => state);
+
+    const [feedbackData, setFeedbackData] = useState({
+        q1: 0,
+        q2: 0,
+        q3: 0,
+        comments: ''
+    });
+
+    const questions = {
+        q1: "How would you rate the difficulty level of the questions?",
+        q2: "How would you rate the clarity of the questions?",
+        q3: "How would you rate your overall experience?"
+    };
 
     const storeResult = async () => {
         try {
@@ -72,6 +109,43 @@ export default function Feedback() {
         }
     };
 
+    const handleFeedbackSubmit = async () => {
+        try {
+            // Validate ratings
+            if (feedbackData.q1 === 0 || feedbackData.q2 === 0 || feedbackData.q3 === 0) {
+                setError('Please rate all questions');
+                return;
+            }
+
+            // Validate comments
+            if (!feedbackData.comments.trim()) {
+                setError('Please provide your comments');
+                return;
+            }
+
+            // Submit feedback
+            await axios.post('http://localhost:5000/api/feedback', {
+                username,
+                email,
+                regNo,
+                department,
+                ratings: {
+                    q1: feedbackData.q1,
+                    q2: feedbackData.q2,
+                    q3: feedbackData.q3
+                },
+                comments: feedbackData.comments.trim()
+            });
+
+            // Navigate to login page after successful submission
+            navigate('/');
+
+        } catch (error) {
+            console.error('Feedback submission error:', error);
+            setError(error.response?.data?.message || 'Error submitting feedback');
+        }
+    };
+
     useEffect(() => {
         if (result?.length && username && email) {
             storeResult()
@@ -83,7 +157,36 @@ export default function Feedback() {
     return (
         <div className='container'>
             <h2 className='title text-light'>Quiz Completed!</h2>
-            {/* Add more UI elements as needed */}
+            
+            <div className="feedback-section">
+                {error && <div className="error-msg">{error}</div>}
+                
+                {Object.entries(questions).map(([key, question]) => (
+                    <StarRating
+                        key={key}
+                        rating={feedbackData[key]}
+                        setRating={(value) => setFeedbackData({...feedbackData, [key]: value})}
+                        question={question}
+                    />
+                ))}
+
+                <div className="comment-section">
+                    <textarea
+                        placeholder="Please share your additional comments..."
+                        value={feedbackData.comments}
+                        onChange={(e) => setFeedbackData({...feedbackData, comments: e.target.value})}
+                        required
+                        className="feedback-textarea"
+                    />
+                </div>
+
+                <button 
+                    onClick={handleFeedbackSubmit}
+                    className="btn"
+                >
+                    Submit Feedback & Finish
+                </button>
+            </div>
         </div>
     );
 }

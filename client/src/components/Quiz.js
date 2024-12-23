@@ -13,10 +13,28 @@ export default function Quiz() {
     
     const { 
         questions: { queue, answers, trace },
-        result: { result }
+        result: { result, username }
     } = useSelector(state => state);
 
     const [{ isLoading, serverError }] = useFetchQestion();
+
+    useEffect(() => {
+        if(!username) {
+            navigate('/');
+            return;
+        }
+        dispatch({ type: 'SET_TRACE', payload: 0 });
+    }, []);
+
+    useEffect(() => {
+        if(queue && queue.length > 0) {
+            dispatch({ type: 'SET_TRACE', payload: 0 });
+            
+            if (!result.length) {
+                dispatch({ type: 'SET_RESULT', payload: Array(queue.length).fill(undefined) });
+            }
+        }
+    }, [queue]);
 
     useEffect(() => {
         console.log("Current trace:", trace);
@@ -26,12 +44,10 @@ export default function Quiz() {
 
     function onNext(){
         if(trace < queue?.length){
-            // Update result before moving to next question
             if(check !== undefined){
                 dispatch(updateResult({ trace, checked: check }));
             }
             
-            // Navigate to feedback on last question
             if(trace === queue?.length - 1){
                 navigate('/feedback');
                 return;
@@ -55,17 +71,17 @@ export default function Quiz() {
 
     if(isLoading) return <h3 className='text-light'>isLoading</h3>
     if(serverError) return <h3 className='text-light'>{serverError || "Unknown Error"}</h3>
+    if(!queue || !queue[trace]) return <h3 className='text-light'>Loading questions...</h3>
 
     return (
         <div className='container'>
             <TabDetection />
-            {/* <h1 className='title text-light'>Quiz Application</h1> */}
 
             <div className='questions'>
-                <h2 className='text-light'>{queue?.[trace]?.question}</h2>
+                <h2 className='text-light'>{queue[trace]?.question}</h2>
 
                 <ul key={`question-${trace}`}>
-                    {queue?.[trace]?.options?.map((q, i) => (
+                    {queue[trace]?.options?.map((q, i) => (
                         <li key={`q${trace}-${i}`}>
                             <input 
                                 type="radio"

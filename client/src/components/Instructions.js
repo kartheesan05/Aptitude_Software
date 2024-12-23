@@ -1,23 +1,35 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
 import '../styles/Instructions.css';
 
 export default function Instructions() {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const { username } = useSelector(state => state.result);
+
+    useEffect(() => {
+        if(!username) {
+            navigate('/');
+            return;
+        }
+        // Clear any existing quiz state when starting new quiz
+        sessionStorage.removeItem('quizState');
+    }, []);
 
     const startQuiz = () => {
         if(!username){
             navigate('/');
             return;
         }
+        // Reset trace before starting quiz
+        dispatch({ type: 'SET_TRACE', payload: 0 });
         navigate('/quiz');
     }
 
     return (
-        <div className='container'>
-            <h1 className='title text-light'>Instructions</h1>
+        <div className='inst-container'>
+            <h1 className='inst-title'>Instructions</h1>
             
             <div className='instructions'>
                 <h2>Please read the following instructions carefully:</h2>

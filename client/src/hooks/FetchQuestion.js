@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { startExamAction, moveNextAction, movePrevAction } from '../redux/question_reducer'
+import { startExamAction, moveNextAction, movePrevAction, setTraceAction } from '../redux/question_reducer'
 import axios from 'axios'
 
 /** fetch question hook to fetch api data and set value to store */
@@ -28,11 +28,14 @@ export const useFetchQestion = () => {
                     setGetData(prev => ({...prev, isLoading: false}));
                     setGetData(prev => ({...prev, apiData: data[0].questions}));
 
-                    /** dispatch an action to store questions and answers */
+                    // First dispatch to reset trace
+                    dispatch(setTraceAction(0));
+                    
+                    // Then dispatch start exam action
                     dispatch(startExamAction({
                         question: data[0].questions,
                         answers: data[0].answers
-                    }))
+                    }));
 
                 } else {
                     throw new Error("No Questions Available");

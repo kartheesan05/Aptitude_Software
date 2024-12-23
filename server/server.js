@@ -8,6 +8,7 @@ import { router as userRouter } from './routes/userRoutes.js';
 import adminRouter from './routes/adminRoutes.js';
 import AccessCode from './models/accessCodeSchema.js';
 import { router as questionRouter } from './routes/questionRoutes.js';
+import { feedbackRouter } from './routes/feedbackRoutes.js';
 
 // Load environment variables first
 config();
@@ -23,6 +24,7 @@ app.use('/api', router);
 app.use('/api/users', userRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', questionRouter);
+app.use('/api/feedback', feedbackRouter);
 
 // Check if MongoDB URI exists
 if (!process.env.MONGODB_URI && !process.env.ATLAS_URL) {

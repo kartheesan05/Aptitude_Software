@@ -10,6 +10,7 @@ export const questionReducer = (state = {
                 ...state,
                 queue: action.payload.question,
                 answers: action.payload.answers,
+                trace: 0,
                 userAnswers: new Array(action.payload.question.length).fill(undefined)
             }
         case 'MOVE_NEXT':
@@ -21,6 +22,11 @@ export const questionReducer = (state = {
             return {
                 ...state,
                 trace: state.trace - 1
+            }
+        case 'SET_TRACE':
+            return {
+                ...state,
+                trace: action.payload
             }
         case 'SAVE_ANSWER':
             const newUserAnswers = [...state.userAnswers];
@@ -61,4 +67,9 @@ export const resetAllAction = () => ({
 export const saveAnswerAction = (index, answer) => ({
     type: 'SAVE_ANSWER',
     payload: { index, answer }
+});
+
+export const setTraceAction = (payload) => ({
+    type: 'SET_TRACE',
+    payload
 });

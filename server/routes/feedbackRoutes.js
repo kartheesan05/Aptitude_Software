@@ -5,17 +5,12 @@ const router = express.Router();
 
 router.post('/', async (req, res) => {
     try {
-        const { username, email, regNo, ratings, comments } = req.body;
+        const { username, email, ratings, comments } = req.body;
 
-        // Validate required fields
-        if (!username || !email || !regNo || !ratings || !comments) {
-            return res.status(400).json({ message: 'All fields are required' });
-        }
-
+        // Create new feedback
         const newFeedback = new Feedback({
             username,
             email,
-            regNo,
             ratings,
             comments
         });

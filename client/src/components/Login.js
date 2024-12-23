@@ -29,8 +29,7 @@ export default function Login() {
         username: '',
         email: '',
         regNo: '',
-        department: departments[0],
-        // code: '',
+        department: '',
         accessCode: ''
     });
 
@@ -46,7 +45,7 @@ export default function Login() {
             const selectedDept = departments.find(dept => dept.id === value);
             setFormData(prev => ({
                 ...prev,
-                department: selectedDept
+                department: selectedDept || ''
             }));
         } else if (name === 'email' && value && !validateEmail(value)) {
             setErrors(prev => ({...prev, email: 'Please use your college email'}));
@@ -59,10 +58,15 @@ export default function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErrors({});
+        setError('');
 
         let newErrors = {};
         if (!formData.username?.trim()) newErrors.username = 'Username is required';
-        if (!formData.email?.trim()) newErrors.email = 'Email is required';
+        if (!formData.email?.trim()) {
+            newErrors.email = 'Email is required';
+        } else if (!validateEmail(formData.email)) {
+            newErrors.email = 'Please use your college email';
+        }
         if (!formData.regNo?.trim()) newErrors.regNo = 'Registration number is required';
         if (!formData.department) newErrors.department = 'Department is required';
         if (!formData.accessCode?.trim()) newErrors.accessCode = 'Access code is required';
@@ -73,6 +77,16 @@ export default function Login() {
         }
 
         try {
+            const checkResponse = await axios.post('http://localhost:5000/api/users/check-user', {
+                email: formData.email,
+                regNo: formData.regNo
+            });
+
+            if (!checkResponse.data.canTakeTest) {
+                setError('You have already taken this test. Each user is allowed only one attempt.');
+                return;
+            }
+
             const codeResponse = await axios.post('http://localhost:5000/api/users/verify-code', {
                 accessCode: formData.accessCode
             });
@@ -82,40 +96,23 @@ export default function Login() {
                 return;
             }
 
-            const checkResponse = await axios.post('http://localhost:5000/api/users/check-user', {
-                email: formData.email,
-                regNo: formData.regNo
-            });
-
-            if (!checkResponse.data.canTakeTest) {
-                setError('You have already taken the test. Each user can only take the test once.');
-                return;
-            }
-
             dispatch(setUserDetails({
                 username: formData.username,
                 email: formData.email,
                 regNo: formData.regNo,
                 department: formData.department.name,
-                departmentId: formData.department.id,
-                code: formData.code
-            }));
-            
-            console.log('Navigating to instructions with data:', {
-                username: formData.username,
-                email: formData.email,
-                regNo: formData.regNo,
-                department: formData.department.name,
                 departmentId: formData.department.id
-            });
+            }));
             
             navigate('/instructions');
             
         } catch (error) {
             console.error("Login error:", error);
-            setErrors({ 
-                general: error.response?.data?.message || 'An error occurred. Please try again.'
-            });
+            if (error.response?.data?.message === 'User has already taken the test') {
+                setError('You have already taken this test. Each user is allowed only one attempt.');
+            } else {
+                setError(error.response?.data?.message || 'An error occurred. Please try again.');
+            }
         }
     };
 
@@ -124,7 +121,19 @@ export default function Login() {
             <h1 className='title text-light'>Login</h1>
 
             <form className='textbox' onSubmit={handleSubmit}>
-                {errors.general && <div className="error-msg">{errors.general}</div>}
+                {error && (
+                    <div className="error-msg" style={{ 
+                        backgroundColor: '#ffebee',
+                        color: '#c62828',
+                        padding: '10px',
+                        borderRadius: '5px',
+                        marginBottom: '15px',
+                        textAlign: 'center',
+                        fontWeight: 'bold'
+                    }}>
+                        {error}
+                    </div>
+                )}
                 <div className="input-group">
                     <input
                         type="text"
@@ -161,9 +170,10 @@ export default function Login() {
                 <div className="input-group">
                     <select
                         name="department"
-                        value={formData.department.id}
+                        value={formData.department ? formData.department.id : ''}
                         onChange={handleChange}
                     >
+                        <option value="" disabled>Select Department</option>
                         {departments.map(dept => (
                             <option key={dept.id} value={dept.id}>
                                 {dept.name}
@@ -173,17 +183,6 @@ export default function Login() {
                     {errors.department && <div className="error">{errors.department}</div>}
                 </div>
 
-                {/* <div className="input-group">
-                    <input
-                        type="text"
-                        name="code"
-                        placeholder="Enter Code"
-                        value={formData.code}
-                        onChange={handleChange}
-                    />
-                    {errors.code && <div className="error">{errors.code}</div>}
-                </div> */}
-
                 <div className="input-group">
                     <input
                         type="text"
@@ -191,7 +190,6 @@ export default function Login() {
                         placeholder="Access Code"
                         value={formData.accessCode}
                         onChange={handleChange}
-                        required
                     />
                     {errors.accessCode && <div className="error">{errors.accessCode}</div>}
                 </div>

@@ -38,6 +38,11 @@ export default function Login() {
         return email.endsWith('@svce.ac.in');
     };
 
+    const validateRegNo = (regNo) => {
+        const regNoPattern = /^\d{13}$/;  // Exactly 13 digits
+        return regNoPattern.test(regNo);
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setErrors(prev => ({...prev, [name]: ''}));
@@ -51,6 +56,9 @@ export default function Login() {
         } else if (name === 'email' && value && !validateEmail(value)) {
             setErrors(prev => ({...prev, email: 'Please use your college email'}));
             setFormData(prev => ({...prev, [name]: value}));
+        } else if (name === 'regNo' && value && !validateRegNo(value)) {
+            setErrors(prev => ({...prev, regNo: 'Registration number must be 13 digits'}));
+            setFormData(prev => ({...prev, [name]: value}));
         } else {
             setFormData(prev => ({...prev, [name]: value}));
         }
@@ -62,13 +70,17 @@ export default function Login() {
         setError('');
 
         let newErrors = {};
-        if (!formData.username?.trim()) newErrors.username = 'Username is required';
+        if (!formData.username?.trim()) newErrors.username = 'Name is required';
         if (!formData.email?.trim()) {
             newErrors.email = 'Email is required';
         } else if (!validateEmail(formData.email)) {
             newErrors.email = 'Please use your college email';
         }
-        if (!formData.regNo?.trim()) newErrors.regNo = 'Registration number is required';
+        if (!formData.regNo?.trim()) {
+            newErrors.regNo = 'Registration number is required';
+        } else if (!validateRegNo(formData.regNo)) {
+            newErrors.regNo = 'Registration number must be 13 digits';
+        }
         if (!formData.department) newErrors.department = 'Department is required';
         if (!formData.accessCode?.trim()) newErrors.accessCode = 'Access code is required';
 
@@ -148,7 +160,7 @@ export default function Login() {
                     <input
                         type="text"
                         name="username"
-                        placeholder="Username"
+                        placeholder="Name"
                         value={formData.username}
                         onChange={handleChange}
                     />
@@ -162,6 +174,8 @@ export default function Login() {
                         placeholder="Registration Number"
                         value={formData.regNo}
                         onChange={handleChange}
+                        maxLength={13}
+                        pattern="\d{13}"
                     />
                     {errors.regNo && <div className="error">{errors.regNo}</div>}
                 </div>

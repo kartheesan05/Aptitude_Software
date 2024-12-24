@@ -50,8 +50,8 @@ export default function Instructions() {
     }
 
     return (
-        <div className='inst-container'>
-            <h1 className='inst-title'>Instructions</h1>
+        <div className='container'>
+            <h1 className='title'>Instructions</h1>
             
             <div className='instructions'>
                 <h2>Please read the following instructions carefully:</h2>

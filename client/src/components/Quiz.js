@@ -114,7 +114,7 @@ export default function Quiz() {
                 if (unanswered.length > 0) {
                     setShowConfirmation(true);
                 } else {
-                    navigate('/feedback');
+                    navigate('/feedback', { state: { fromQuiz: true } });
                 }
                 return;
             }
@@ -149,7 +149,7 @@ export default function Quiz() {
         <div className='container'>
             {!isFullscreen && (
                 <div className="fullscreen-notice" style={{
-                    backgroundColor: '#fff3cd',
+                    backgroundColor: '#17c6e5',
                     color: '#856404',
                     padding: '10px',
                     marginBottom: '15px',
@@ -164,7 +164,7 @@ export default function Quiz() {
                                 padding: '5px 10px',
                                 border: 'none',
                                 borderRadius: '3px',
-                                backgroundColor: '#856404',
+                                backgroundColor: '#136b7f',
                                 color: 'white',
                                 cursor: 'pointer'
                             }}
@@ -237,7 +237,7 @@ export default function Quiz() {
                         Continue Answering
                     </button>
                     <button
-                        onClick={() => navigate('/feedback')}
+                        onClick={() => navigate('/feedback', { state: { fromQuiz: true } })}
                         style={{
                             padding: '8px 16px',
                             backgroundColor: '#dc3545',

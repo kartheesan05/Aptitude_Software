@@ -27,6 +27,7 @@ const StarRating = ({ rating, setRating, question }) => {
 export default function Feedback() {
     const navigate = useNavigate();
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
     const { 
         questions: { queue, answers },
         result: { result, username, email, regNo, department, departmentId }
@@ -150,11 +151,32 @@ export default function Feedback() {
     };
 
     useEffect(() => {
-        if (result?.length && username && email) {
-            storeResult()
-                .then(res => console.log("Result stored successfully:", res))
-                .catch(err => console.error("Failed to store result:", err));
-        }
+        // Store result first
+        const initializePage = async () => {
+            setIsLoading(true);
+            try {
+                if (result?.length && username && email) {
+                    await storeResult();
+                }
+                
+                // Check navigation only after storing result
+                const response = await axios.get(`http://localhost:5000/api/users/check-test-status`, {
+                    params: { email, regNo }
+                });
+
+                if (!response.data.hasCompletedTest) {
+                    navigate('/', { replace: true });
+                }
+            } catch (error) {
+                console.error('Initialization error:', error);
+                // Don't navigate away immediately on error
+                setError('There was an error loading your feedback page. Please try refreshing.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        initializePage();
     }, []);
 
     useEffect(() => {
@@ -180,31 +202,18 @@ export default function Feedback() {
         window.history.pushState(null, null, window.location.pathname);
         window.addEventListener('popstate', preventBackNavigation);
 
-        // Check if user came from quiz or was redirected due to tab switching
-        const checkNavigation = async () => {
-            try {
-                // You might want to add an API endpoint to check the user's test status
-                const response = await axios.get(`http://localhost:5000/api/users/check-test-status`, {
-                    params: { email, regNo }
-                });
-
-                if (!response.data.hasCompletedTest) {
-                    navigate('/', { replace: true });
-                }
-            } catch (error) {
-                console.error('Navigation check error:', error);
-                navigate('/', { replace: true });
-            }
-        };
-
-        checkNavigation();
-
         // Cleanup function
         return () => {
             window.removeEventListener('beforeunload', preventLeaving);
             window.removeEventListener('popstate', preventBackNavigation);
         };
     }, [navigate, email, regNo]);
+
+    if (isLoading) {
+        return <div className='container'>
+            <h2 className='title text-light'>Loading...</h2>
+        </div>;
+    }
 
     return (
         <div className='container'>

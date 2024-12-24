@@ -14,7 +14,7 @@ body {
     padding: 0; */
 }
 
-.inst-container {
+.container {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -25,9 +25,9 @@ body {
     padding-bottom: 10px;
 }
 
-.inst-title {
+.title {
     font-size: 3em;
-    margin: 7em 0;
+    margin: 0.5em 0;
     color: var(--light-color);
     padding: 0.3em 0.5em;
     border: 3px solid var(--primary-color); /* Border with the primary color */

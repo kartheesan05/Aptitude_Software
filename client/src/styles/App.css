@@ -1,0 +1,288 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+
+:root {
+  --primary-color: #17c6e5;
+  --dark-color: #222222;
+  --light-color: #f0f0f0;
+  --input-border: #cccccc;
+  --button-bg: #136b7f;
+  --button-text-color: #202020;
+  --button-hover-bg: #f0f0f0;
+  --button-hover-text-color: #202020;
+}
+
+body, html {
+  height: 100%;
+  background: #ffffff;  /* White background */
+  color: #000000;  /* Black text */
+  margin: 0;
+  padding: 0;
+}
+
+* > * {
+  font-family: 'Poppins', sans-serif;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #ffffff;
+  padding: 3em 2em;  /* Adjusted padding (top/bottom 3em, left/right 2em) */
+}
+
+.form-container {
+  width: 100%;
+  max-width: 500px;
+  padding: 30px;
+  border: 2px solid var(--primary-color);
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;  /* White background for the form container */
+}
+
+.title {
+  font-size: 2.5em;
+  text-align: center;
+  color: #000000;  /* Black text */
+  margin-bottom: 30px;
+}
+
+.label {
+  font-size: 1.1em;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid var(--input-border);
+  border-radius: 5px;
+  font-size: 1em;
+}
+
+.input-field:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+.start {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.start .btn {
+  padding: 10px 20px;
+  font-size: 1.2em;
+  background-color: var(--primary-color);
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 5px;
+}
+
+.start .btn:hover {
+  background-color: var(--button-hover-bg);
+  color: var(--button-hover-text-color);
+}
+
+.admin-link {
+  margin-top: 15px;
+  text-align: right;
+}
+
+.admin-text {
+  font-size: 1em;
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.admin-text:hover {
+  text-decoration: underline;
+}
+
+/* Your previous styles that have been kept intact */
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  padding: 3em 2em;  /* Adjusted padding (top/bottom 3em, left/right 2em) */
+}
+
+.container .title {
+  font-size: 3em;
+  text-align: center;
+  border: 5px solid var(--primary-color);
+  padding: .3em 1em; /* Padding around title */
+  border-radius: 4px;
+  color: #000000;
+}
+
+.text-light {
+  color: #000000;
+}
+
+.container ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+}
+
+.container .questions {
+  padding: 3em;
+}
+
+.container .grid {
+  margin-top: 3em;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 2em;  /* Add padding for button spacing */
+}
+
+.container .btn {
+  padding: 0.5em 1.5em;  /* Reduced padding */
+  border: none;
+  border-radius: 5px;
+  font-size: 1.2em;
+  background-color: var(--primary-color);
+  color: white;
+  cursor: pointer;
+  min-width: 80px;  /* Reduced minimum width */
+  margin: 0 1em;
+}
+
+.container .btn:hover {
+  background-color: var(--button-hover-bg);
+  color: var(--button-hover-text-color);
+}
+
+.container .start .btn {
+  background-color: var(--button-bg);
+}
+
+.container .start .btn:hover {
+  background-color: var(--button-hover-bg);
+}
+
+h1.title {
+  text-align: center;
+  color: #000000;
+  font-size: 2em;
+}
+
+/* List item styles */
+ul li {
+  color: #000000;
+  display: block;
+  position: relative;
+  float: left;
+  width: 100%;
+  height: 100px;
+  border-bottom: 1px solid #333;
+}
+
+ul li input[type=radio] {
+  position: absolute;
+  visibility: hidden;
+}
+
+ul li label {
+  display: block;
+  position: relative;
+  font-weight: 300;
+  font-size: 1.35em;
+  padding: 25px 25px 25px 80px;
+  margin: 10px auto;
+  height: 30px;
+  z-index: 9;
+  cursor: pointer;
+  -webkit-transition: all 0.25s linear;
+}
+
+ul li:hover label {
+  color:#666161;
+}
+
+ul li .check {
+  display: block;
+  position: absolute;
+  border: 5px solid #AAAAAA;
+  border-radius: 50%;
+  height: 25px;
+  width: 25px;
+  top: 30px;
+  left: 20px;
+  z-index: 5;
+  transition: all 0.25s linear;
+  box-sizing: border-box;  /* Added this */
+}
+
+ul li .check::before {
+  display: block;
+  position: absolute;
+  content: '';
+  border-radius: 50%;
+  height: 11px;  /* Adjusted size */
+  width: 11px;  /* Adjusted size */
+  top: 2px;     /* Adjusted position */
+  left: 2px;    /* Adjusted position */
+  margin: auto;
+  transition: all 0.25s linear;
+}
+
+input[type=radio]:checked ~ .check {
+  border: 5px solid var(--primary-color);
+}
+
+input[type=radio]:checked ~ .check::before {
+  background: var(--primary-color);
+}
+
+input[type=radio]:checked ~ .text-primary {
+  color: var(--primary-color);
+}
+
+.checked {
+  border: 5px solid var(--primary-color) !important;
+}
+
+.checked::before {
+  background: var(--primary-color) !important;
+}
+
+.next {
+  margin-left: auto;
+}
+
+.prev {
+  margin-right: auto;
+}
+
+.questions h2 {
+  color: #000000;
+  margin-bottom: 2em;
+}
+
+/* Hover effects for radio buttons */
+ul li:hover .check {
+  border-color: var(--primary-color);
+}
+
+ul li:hover .check.checked {
+  border-color: var(--primary-color);
+}
+
+/* Ensure the radio button circle is properly centered */
+ul li {
+  position: relative;
+}
+
+ul li label {
+  position: relative;
+  z-index: 2;
+}

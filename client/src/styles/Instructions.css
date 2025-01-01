@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+
+:root {
+    --primary-color: #1eb2a6;
+    --dark-color: #222222;
+    --light-color: #f0f0f0;
+    --accent-color: #faff5a; /* for buttons */
+}
+
+body {
+    background-color: #1eb2a6;
+    font-family: 'Poppins', sans-serif;
+    /* margin: 0;
+    padding: 0; */
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    text-align: center;
+    padding-bottom: 10px;
+}
+
+.title {
+    font-size: 3em;
+    margin: 0.5em 0;
+    color: var(--light-color);
+    padding: 0.3em 0.5em;
+    border: 3px solid var(--primary-color); /* Border with the primary color */
+    border-radius: 8px;
+    display: inline-block;
+    background-color: transparent; /* Transparent background */
+    font-weight: bold; /* Added for more emphasis */
+}
+
+.instructions {
+    width: 90%;
+    max-width: 800px;
+    background-color: #ffffff;
+    padding: 2em;
+    margin-top: 2em;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+
+.instructions h2 {
+    color: var(--dark-color);
+    font-size: 1.5em;
+    margin-bottom: 1.5em;
+}
+
+.instructions ol {
+    list-style-type: decimal;
+    padding-left: 1.5em;
+    color: #333333;
+    font-size: 1.1em;
+}
+
+.instructions ol li {
+    margin-bottom: 1.2em;
+}
+
+.instructions ol li::marker {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.btn-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 2.5em;
+}
+
+.btn {
+    padding: 1em 2.5em;
+    background-color: var(--accent-color);
+    color: #202020;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+    background-color: #e0e400;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .instructions {
+        width: 100%;
+        padding: 1.5em;
+    }
+
+    .title {
+        font-size: 2.5em;
+    }
+
+    .btn {
+        font-size: 1.1em;
+        padding: 0.8em 2em;
+    }
+}

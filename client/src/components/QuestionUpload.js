@@ -8,7 +8,8 @@ export default function QuestionUpload() {
   const [newQuestion, setNewQuestion] = useState({
     question: '',
     options: ['', '', '', ''],
-    correctAnswer: 0
+    correctAnswer: 0,
+    image: null
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -67,6 +68,12 @@ export default function QuestionUpload() {
     ] 
   };
 
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setNewQuestion({...newQuestion, image: e.target.files[0]});
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -90,19 +97,35 @@ export default function QuestionUpload() {
         default:
           throw new Error('Please select a question type');
       }
- 
-      const response = await axios.post(`http://localhost:5000/api/${endpoint}`, {
-        ...newQuestion,
-        category: selectedCategory
+
+      const formData = new FormData();
+      formData.append('question', newQuestion.question);
+      formData.append('category', selectedCategory);
+      newQuestion.options.forEach((option, index) => {
+        formData.append(`options[${index}]`, option);
       });
+      formData.append('correctAnswer', newQuestion.correctAnswer);
+      if (newQuestion.image) {
+        formData.append('image', newQuestion.image);
+      }
+
+      const response = await axios.post(
+        `http://localhost:5000/api/${endpoint}`, 
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
 
       if (response.data) {
         setSuccess('Question added successfully!');
-        // Reset form
         setNewQuestion({
           question: '',
           options: ['', '', '', ''],
-          correctAnswer: 0
+          correctAnswer: 0,
+          image: null
         });
         setSelectedCategory('');
       }
@@ -113,7 +136,7 @@ export default function QuestionUpload() {
 
   return (
     <div className='container'>
-      <h1 className='title text-light'>Upload Questions</h1>
+      {/* <h1 className='title text-light'>Upload Questions</h1> */}
 
       <form onSubmit={handleSubmit} className="question-form">
         {/* Question Type Selection */}
@@ -196,6 +219,27 @@ export default function QuestionUpload() {
               <option key={index} value={index}>Option {index + 1}</option>
             ))}
           </select>
+        </div>
+
+        <div className="form-group">
+          <label className="file-input-label">
+            Add Image (Optional)
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="file-input"
+            />
+          </label>
+          {newQuestion.image && (
+            <div className="image-preview">
+              <img 
+                src={URL.createObjectURL(newQuestion.image)} 
+                alt="Question preview" 
+                style={{ maxWidth: '200px', marginTop: '10px' }}
+              />
+            </div>
+          )}
         </div>
 
         {error && <div className="error-message">{error}</div>}

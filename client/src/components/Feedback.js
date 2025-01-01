@@ -40,6 +40,8 @@ export default function Feedback() {
         comments: ''
     });
 
+    const [resultStored, setResultStored] = useState(false);
+
     const questions = {
         q1: "How would you rate the difficulty level of the questions?",
         q2: "How would you rate the clarity of the questions?",
@@ -103,6 +105,7 @@ export default function Feedback() {
             );
             
             console.log("Server response:", response);
+            setResultStored(true);
             return response;
         } catch (error) {
             console.error("Error storing result:", error);
@@ -123,6 +126,8 @@ export default function Feedback() {
                 return;
             }
 
+            setIsLoading(true); // Add loading state while submitting
+
             // Submit feedback
             await axios.post('http://localhost:5000/api/feedback', {
                 username,
@@ -141,35 +146,37 @@ export default function Feedback() {
             window.removeEventListener('beforeunload', () => {});
             window.removeEventListener('popstate', () => {});
 
-            // Navigate to login page after successful submission
-            navigate('/', { replace: true });
+            // Navigate to success page after successful submission
+            navigate('/success', { replace: true });
 
         } catch (error) {
             console.error('Feedback submission error:', error);
             setError(error.response?.data?.message || 'Error submitting feedback');
+        } finally {
+            setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        // Store result first
         const initializePage = async () => {
             setIsLoading(true);
             try {
-                if (result?.length && username && email) {
+                if (result?.length && username && email && !resultStored) {
                     await storeResult();
                 }
                 
-                // Check navigation only after storing result
-                const response = await axios.get(`http://localhost:5000/api/users/check-test-status`, {
-                    params: { email, regNo }
-                });
+                // Only check test status after result is stored
+                if (resultStored) {
+                    const response = await axios.get(`http://localhost:5000/api/users/check-test-status`, {
+                        params: { email, regNo }
+                    });
 
-                if (!response.data.hasCompletedTest) {
-                    navigate('/', { replace: true });
+                    if (!response.data.hasCompletedTest) {
+                        navigate('/', { replace: true });
+                    }
                 }
             } catch (error) {
                 console.error('Initialization error:', error);
-                // Don't navigate away immediately on error
                 setError('There was an error loading your feedback page. Please try refreshing.');
             } finally {
                 setIsLoading(false);
@@ -177,7 +184,7 @@ export default function Feedback() {
         };
 
         initializePage();
-    }, []);
+    }, [resultStored]);
 
     useEffect(() => {
         // Prevent leaving the page without submitting feedback

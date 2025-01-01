@@ -1,5 +1,4 @@
 import '../styles/App.css';
-
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
 import Login from './Login';
@@ -11,17 +10,17 @@ import AdminLogin from './AdminLogin';
 import AdminDashboard from './AdminDashboard';
 import { CheckUserExist } from '../helper/helper';
 import QuestionUpload from './QuestionUpload';
-
+import Success from './Success';
 
 /** React Routes */
 const router = createBrowserRouter([
   {
     path : '/',
-    element : <Login></Login>
+    element : <Login />
   },
   {
     path : '/instructions',
-    element : <CheckUserExist> <Instructions /></CheckUserExist> 
+    element : <CheckUserExist><Instructions /></CheckUserExist>
   },
   {
     path : '/quiz',
@@ -29,11 +28,11 @@ const router = createBrowserRouter([
   },
   {
     path : '/result',
-    element : <CheckUserExist> <Result /> </CheckUserExist>
+    element : <CheckUserExist><Result /></CheckUserExist>
   },
   {
     path : '/feedback',
-    element : <Feedback></Feedback>
+    element : <Feedback />
   },
   {
     path : '/admin-login',
@@ -46,15 +45,20 @@ const router = createBrowserRouter([
   {
     path: '/question-upload',
     element: <QuestionUpload />
+  },
+  {
+    path: '/success',
+    element: <Success />
   }
-])
+]);
+
+// Scroll restoration
+if (typeof window !== 'undefined') {
+  window.scrollTo(0, 0);
+}
 
 function App() {
-  return (
-    <>
-      <RouterProvider router={router} />
-    </>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

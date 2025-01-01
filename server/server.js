@@ -9,6 +9,7 @@ import adminRouter from './routes/adminRoutes.js';
 import AccessCode from './models/accessCodeSchema.js';
 import { router as questionRouter } from './routes/questionRoutes.js';
 import { feedbackRouter } from './routes/feedbackRoutes.js';
+import timerRoutes from './routes/timerRoutes.js';
 
 // Load environment variables first
 config();
@@ -25,6 +26,8 @@ app.use('/api/users', userRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', questionRouter);
 app.use('/api/feedback', feedbackRouter);
+app.use('/api/timer', timerRoutes);
+app.use('/uploads', express.static('uploads'));
 
 // Check if MongoDB URI exists
 if (!process.env.MONGODB_URI && !process.env.ATLAS_URL) {

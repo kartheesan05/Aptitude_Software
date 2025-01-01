@@ -11,6 +11,7 @@ export default function AdminDashboard() {
     const [newCode, setNewCode] = useState('');
     const [currentCode, setCurrentCode] = useState('');
     const [hasActiveSession, setHasActiveSession] = useState(false);
+    const [timerDuration, setTimerDuration] = useState(90);
 
     const searchUser = async () => {
         setError('');
@@ -157,7 +158,29 @@ export default function AdminDashboard() {
         }
     };
 
+    const fetchTimerDuration = async () => {
+        try {
+            const response = await axios.get('http://localhost:5000/api/timer/duration');
+            setTimerDuration(response.data.durationInMinutes);
+        } catch (error) {
+            console.error('Error fetching timer duration:', error);
+        }
+    };
+
+    const updateTimerDuration = async () => {
+        try {
+            await axios.post('http://localhost:5000/api/timer/update', {
+                durationInMinutes: timerDuration
+            });
+            alert('Timer duration updated successfully');
+        } catch (error) {
+            console.error('Error updating timer duration:', error);
+            alert('Error updating timer duration');
+        }
+    };
+
     useEffect(() => {
+        fetchTimerDuration();
         getCurrentCode();
     }, []);
 
@@ -292,6 +315,26 @@ export default function AdminDashboard() {
                         className="search-btn"
                     >
                         Update Access Code
+                    </button>
+                </div>
+            </div>
+
+            <div className="timer-settings-section">
+                <h2>Timer Settings</h2>
+                <div className="timer-update-form">
+                    <input
+                        type="number"
+                        value={timerDuration}
+                        onChange={(e) => setTimerDuration(Number(e.target.value))}
+                        placeholder="Enter duration in minutes"
+                        className="search-input"
+                        min="1"
+                    />
+                    <button 
+                        onClick={updateTimerDuration}
+                        className="search-btn"
+                    >
+                        Update Timer Duration
                     </button>
                 </div>
             </div>

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import beepSound from '../assets/beep.js';
 
 function useTabVisibility() {
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const [alertShown, setAlertShown] = useState(false);
+  const [audio] = useState(new Audio(beepSound));
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -14,9 +16,18 @@ function useTabVisibility() {
 
     console.log("Tab detection initialized");
 
-    // Create audio element for beep sound
-    const beepSound = new Audio('https://www.soundjay.com/button/beep-07.wav');
-    beepSound.load(); // Preload the sound
+    // Configure audio
+    audio.preload = 'auto';
+    audio.volume = 1.0;
+
+    const playBeep = async () => {
+      try {
+        audio.currentTime = 0; // Reset audio to start
+        await audio.play();
+      } catch (error) {
+        console.error('Error playing beep:', error);
+      }
+    };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
@@ -25,16 +36,17 @@ function useTabVisibility() {
           const newCount = prevCount + 1;
           console.log('Switch count:', newCount);
 
+          // Play beep sound for every switch
+          playBeep();
+
           if (newCount === 1 && !alertShown) {
             // First switch
-            beepSound.play().catch(err => console.log('Error playing sound:', err));
             alert('Warning: You switched tabs! This is your first warning.');
             setAlertShown(true);
           } else if (newCount === 2) {
             // Second switch
-            beepSound.play().catch(err => console.log('Error playing sound:', err));
             alert('You have switched tabs twice. The test will now end.');
-            navigate('/feedback'); // Navigate to results page
+            navigate('/feedback', { state: { fromQuiz: true } });
           }
 
           return newCount;
@@ -44,11 +56,24 @@ function useTabVisibility() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // Initialize audio with user interaction
+    const initAudio = () => {
+      audio.play().then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      }).catch(error => console.error('Error initializing audio:', error));
+      document.removeEventListener('click', initAudio);
+    };
+    document.addEventListener('click', initAudio);
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('click', initAudio);
+      audio.pause();
+      audio.src = '';
       console.log('Tab detection cleanup');
     };
-  }, [alertShown, navigate]);
+  }, [alertShown, navigate, audio]);
 
   return { tabSwitchCount };
 }
@@ -58,7 +83,6 @@ const TabDetection = () => {
 
   return (
     <div style={{ display: 'none' }}>
-      {/* Hidden component that just handles tab detection */}
       <span>{tabSwitchCount}</span>
     </div>
   );

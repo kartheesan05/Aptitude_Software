@@ -1,6 +1,30 @@
 import express from 'express';
 import mongoose from 'mongoose';
+import multer from 'multer';
+import path from 'path';
 const router = express.Router();
+
+// Configure multer for image upload
+const storage = multer.diskStorage({
+  destination: './uploads/',
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+
+const upload = multer({ 
+  storage,
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|gif/;
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = filetypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error('Only image files are allowed!'));
+  }
+});
 
 // Question Schema
 const questionSchema = new mongoose.Schema({
@@ -9,6 +33,7 @@ const questionSchema = new mongoose.Schema({
   question: String,
   options: [String],
   correctAnswer: Number,
+  image: String,
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -172,16 +197,17 @@ router.get('/:departmentId', async (req, res) => {
 });
 
 // Routes for different question types
-router.post('/aptitude-questions', async (req, res) => {
+router.post('/aptitude-questions', upload.single('image'), async (req, res) => {
     try {
         const { question, options, correctAnswer, category } = req.body;
         
         const newQuestion = new AptitudeQuestion({
             category: 'aptitude',
-            subCategory: category,  // This preserves the subcategory
+            subCategory: category,
             question,
             options,
-            correctAnswer
+            correctAnswer,
+            image: req.file ? `/uploads/${req.file.filename}` : null
         });
 
         await newQuestion.save();
@@ -192,63 +218,233 @@ router.post('/aptitude-questions', async (req, res) => {
     }
 });
 
-router.post('/verbal-questions', async (req, res) => {
+router.post('/verbal-questions', upload.single('image'), async (req, res) => {
     try {
-        const { question, options, correctAnswer, category } = req.body;
+        // Debug logs
+        console.log('Received verbal question data:', req.body);
         
+        const { question, category } = req.body;
+        
+        // Extract options from form data
+        const options = [];
+        // Look for options in both formats
+        for (let i = 0; i < 4; i++) {
+            const option = req.body[`options[${i}]`] || req.body.options?.[i];
+            if (option) {
+                options.push(option);
+            }
+        }
+
+        console.log('Extracted options:', options);
+
+        // Validate the data
+        if (!question) throw new Error('Question is required');
+        if (!category) throw new Error('Category is required');
+        if (options.length !== 4) {
+            console.error('Options received:', options);
+            throw new Error('Four options are required');
+        }
+
         const newQuestion = new VerbalQuestion({
             category: 'verbal',
-            subCategory: category,  // This preserves the subcategory
+            subCategory: category,
             question,
-            options,
-            correctAnswer
+            options: options,
+            correctAnswer: Number(req.body.correctAnswer),
+            image: req.file ? `/uploads/${req.file.filename}` : null
         });
 
-        await newQuestion.save();
-        res.status(201).json({ message: 'Question added successfully' });
+        console.log('Question to be saved:', {
+            category: 'verbal',
+            subCategory: category,
+            question,
+            options,
+            correctAnswer: Number(req.body.correctAnswer)
+        });
+
+        const savedQuestion = await newQuestion.save();
+        
+        res.status(201).json({ 
+            message: 'Question added successfully',
+            question: savedQuestion
+        });
     } catch (error) {
-        console.error('Error adding verbal question:', error);
-        res.status(500).json({ message: 'Error adding question' });
+        console.error('Error details:', {
+            message: error.message,
+            body: req.body,
+            options: req.body.options
+        });
+        res.status(500).json({ 
+            message: 'Error adding question', 
+            error: error.message,
+            requestData: {
+                body: req.body,
+                options: req.body.options
+            }
+        });
     }
 });
 
-router.post('/programming-questions', async (req, res) => {
+router.post('/programming-questions', upload.single('image'), async (req, res) => {
     try {
-        const { question, options, correctAnswer, category } = req.body;
+        // Debug logs
+        console.log('Received programming question data:', req.body);
         
+        const { question, category } = req.body;
+        
+        // Extract options from form data
+        const options = [];
+        // Look for options in both formats
+        for (let i = 0; i < 4; i++) {
+            const option = req.body[`options[${i}]`] || req.body.options?.[i];
+            if (option) {
+                options.push(option);
+            }
+        }
+
+        console.log('Extracted options:', options);
+
+        // Validate the data
+        if (!question) throw new Error('Question is required');
+        if (!category) throw new Error('Category is required');
+        if (options.length !== 4) {
+            console.error('Options received:', options);
+            throw new Error('Four options are required');
+        }
+
         const newQuestion = new ProgrammingQuestion({
             category: 'programming',
-            subCategory: category,  // This preserves the subcategory
+            subCategory: category,
             question,
-            options,
-            correctAnswer
+            options: options,
+            correctAnswer: Number(req.body.correctAnswer),
+            image: req.file ? `/uploads/${req.file.filename}` : null
         });
 
-        await newQuestion.save();
-        res.status(201).json({ message: 'Question added successfully' });
+        console.log('Question to be saved:', {
+            category: 'programming',
+            subCategory: category,
+            question,
+            options,
+            correctAnswer: Number(req.body.correctAnswer)
+        });
+
+        const savedQuestion = await newQuestion.save();
+        
+        res.status(201).json({ 
+            message: 'Question added successfully',
+            question: savedQuestion
+        });
     } catch (error) {
-        console.error('Error adding programming question:', error);
-        res.status(500).json({ message: 'Error adding question' });
+        console.error('Error details:', {
+            message: error.message,
+            body: req.body,
+            options: req.body.options
+        });
+        res.status(500).json({ 
+            message: 'Error adding question', 
+            error: error.message,
+            requestData: {
+                body: req.body,
+                options: req.body.options
+            }
+        });
     }
 });
 
-router.post('/core-questions', async (req, res) => {
+router.post('/core-questions', upload.single('image'), async (req, res) => {
     try {
-        const { question, options, correctAnswer, category } = req.body;
+        // Debug logs
+        console.log('Received core question data:', req.body);
         
+        const { question, category } = req.body;
+        
+        // Extract options from form data
+        const options = [];
+        // Look for options in both formats
+        for (let i = 0; i < 4; i++) {
+            const option = req.body[`options[${i}]`] || req.body.options?.[i];
+            if (option) {
+                options.push(option);
+            }
+        }
+
+        console.log('Extracted options:', options);
+
+        // Validate the data
+        if (!question) throw new Error('Question is required');
+        if (!category) throw new Error('Category is required');
+        if (options.length !== 4) {
+            console.error('Options received:', options);
+            throw new Error('Four options are required');
+        }
+
         const newQuestion = new CoreQuestion({
             category: 'core',
-            subCategory: category,  // This preserves the subcategory for department-specific questions
+            subCategory: category,
             question,
-            options,
-            correctAnswer
+            options: options,
+            correctAnswer: Number(req.body.correctAnswer),
+            image: req.file ? `/uploads/${req.file.filename}` : null
         });
 
-        await newQuestion.save();
-        res.status(201).json({ message: 'Question added successfully' });
+        console.log('Question to be saved:', {
+            category: 'core',
+            subCategory: category,
+            question,
+            options,
+            correctAnswer: Number(req.body.correctAnswer)
+        });
+
+        const savedQuestion = await newQuestion.save();
+        
+        res.status(201).json({ 
+            message: 'Question added successfully',
+            question: savedQuestion
+        });
     } catch (error) {
-        console.error('Error adding core question:', error);
-        res.status(500).json({ message: 'Error adding question' });
+        console.error('Error details:', {
+            message: error.message,
+            body: req.body,
+            options: req.body.options
+        });
+        res.status(500).json({ 
+            message: 'Error adding question', 
+            error: error.message,
+            requestData: {
+                body: req.body,
+                options: req.body.options
+            }
+        });
+    }
+});
+
+// Add this test route to check questions with images
+router.get('/test-images', async (req, res) => {
+    try {
+        // Get one question with image from each collection
+        const aptitudeQuestion = await AptitudeQuestion.findOne({ image: { $ne: null } }).lean();
+        const coreQuestion = await CoreQuestion.findOne({ image: { $ne: null } }).lean();
+        const verbalQuestion = await VerbalQuestion.findOne({ image: { $ne: null } }).lean();
+        const programmingQuestion = await ProgrammingQuestion.findOne({ image: { $ne: null } }).lean();
+
+        const questionsWithImages = {
+            aptitude: aptitudeQuestion,
+            core: coreQuestion,
+            verbal: verbalQuestion,
+            programming: programmingQuestion
+        };
+
+        // Log for debugging
+        console.log('Questions with images found:', 
+            Object.entries(questionsWithImages)
+                .map(([type, q]) => `${type}: ${q ? 'Has image' : 'No image'}`)
+        );
+
+        res.json(questionsWithImages);
+    } catch (error) {
+        console.error('Error testing images:', error);
+        res.status(500).json({ error: 'Error testing images' });
     }
 });
 

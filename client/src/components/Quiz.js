@@ -5,17 +5,28 @@ import { useFetchQestion, MoveNextQuestion, MovePrevQuestion } from '../hooks/Fe
 import { updateResult } from '../redux/result_reducer'
 import '../styles/App.css'
 import TabDetection from './TabDetection'
+import axios from 'axios'
+import { postServerData } from '../helper/helper'
 
 export default function Quiz() {
     const [check, setChecked] = useState(undefined)
     const [isFullscreen, setIsFullscreen] = useState(false)
     const [showConfirmation, setShowConfirmation] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(null);
+    const [isTimeUp, setIsTimeUp] = useState(false);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     
     const { 
         questions: { queue, answers, trace },
-        result: { result, username }
+        result: { 
+            result, 
+            username,
+            email,
+            regNo,
+            department,
+            departmentId
+        }
     } = useSelector(state => state);
 
     const [{ isLoading, serverError }] = useFetchQestion();
@@ -141,6 +152,73 @@ export default function Quiz() {
             .map(q => q.index);
     };
 
+    const fetchTimerDuration = async () => {
+        try {
+            const response = await axios.get('http://localhost:5000/api/timer/duration');
+            const durationInMinutes = response.data.durationInMinutes;
+            setTimeLeft(durationInMinutes * 60); // Convert minutes to seconds
+        } catch (error) {
+            console.error('Error fetching timer duration:', error);
+            setTimeLeft(180); // Default to 3 minutes if fetch fails
+        }
+    };
+
+    useEffect(() => {
+        fetchTimerDuration();
+    }, []);
+
+    useEffect(() => {
+        if (timeLeft === null) return; // Wait for duration to be fetched
+        
+        if (timeLeft <= 0) {
+            setIsTimeUp(true);
+            handleTimeUp();
+            return;
+        }
+
+        const timer = setInterval(() => {
+            setTimeLeft(prev => prev - 1);
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [timeLeft]);
+
+    const handleTimeUp = async () => {
+        try {
+            const resultData = {
+                username,
+                email,
+                regNo,
+                department,
+                departmentId,
+                result,
+                attempts: result.filter(r => r !== undefined).length,
+                points: result.reduce((score, ans, i) => 
+                    score + (Number(ans) === Number(answers[i]) ? 1 : 0), 0),
+                totalQuestions: queue.length
+            };
+
+            await postServerData(
+                `${process.env.REACT_APP_SERVER_HOSTNAME}/api/result`,
+                resultData
+            );
+
+            navigate('/feedback', { 
+                replace: true, 
+                state: { fromQuiz: true, resultSubmitted: true }
+            });
+        } catch (error) {
+            console.error('Error handling time up:', error);
+        }
+    };
+
+    const formatTime = (seconds) => {
+        if (seconds === null) return '--:--';
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+    };
+
     if(isLoading) return <h3 className='text-light'>isLoading</h3>
     if(serverError) return <h3 className='text-light'>{serverError || "Unknown Error"}</h3>
     if(!queue || !queue[trace]) return <h3 className='text-light'>Loading questions...</h3>
@@ -174,6 +252,22 @@ export default function Quiz() {
                     </p>
                 </div>
             )}
+
+            <div className="timer" style={{
+                position: 'fixed',
+                top: '20px',
+                right: '20px',
+                backgroundColor: timeLeft <= 60 ? '#ff4444' : '#1eb2a6',
+                color: 'white',
+                padding: '10px 20px',
+                borderRadius: '5px',
+                fontSize: '1.2em',
+                fontWeight: 'bold',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                transition: 'background-color 0.3s ease'
+            }}>
+                Time Left: {formatTime(timeLeft)}
+            </div>
 
             <TabDetection />
 
@@ -237,7 +331,9 @@ export default function Quiz() {
                         Continue Answering
                     </button>
                     <button
-                        onClick={() => navigate('/feedback', { state: { fromQuiz: true } })}
+                        onClick={() => navigate('/feedback', { 
+                            state: { fromQuiz: true, resultSubmitted: true } 
+                        })}
                         style={{
                             padding: '8px 16px',
                             backgroundColor: '#dc3545',
@@ -268,6 +364,16 @@ export default function Quiz() {
                     {queue[trace]?.question}
                 </h2>
 
+                {queue[trace]?.image && (
+                    <div className="question-image-container">
+                        <img 
+                            src={`http://localhost:5000${queue[trace].image}`} 
+                            alt="Question" 
+                            className="question-image"
+                        />
+                    </div>
+                )}
+
                 <ul key={`question-${trace}`}>
                     {queue[trace]?.options?.map((q, i) => (
                         <li key={`q${trace}-${i}`}>
@@ -288,10 +394,10 @@ export default function Quiz() {
 
             <div className='grid'>
                 {trace > 0 ? 
-                    <button className='btn prev' onClick={onPrev}>Prev</button> 
+                    <button className='btn prev' onClick={onPrev} style={{width: '100px'}}>Prev</button> 
                     : <div></div>
                 }
-                <button className='btn next' onClick={onNext}>
+                <button className='btn next' onClick={onNext} style={{width: '100px'}}>
                     {trace === queue?.length - 1 ? 'Finish' : 'Next'}
                 </button>
             </div>

@@ -11,7 +11,21 @@ export default function AdminDashboard() {
     const [newCode, setNewCode] = useState('');
     const [currentCode, setCurrentCode] = useState('');
     const [hasActiveSession, setHasActiveSession] = useState(false);
-    const [timerDuration, setTimerDuration] = useState(90);
+    const [endTime, setEndTime] = useState(new Date());
+
+    const convertToIST = (date) => {
+        // IST is UTC+5:30
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const utcDate = new Date(date);
+        const istDate = new Date(utcDate.getTime() + istOffset);
+        return istDate;
+    };
+
+    const convertFromIST = (istDate) => {
+        // Convert IST back to UTC
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        return new Date(istDate.getTime() - istOffset);
+    };
 
     const searchUser = async () => {
         setError('');
@@ -25,7 +39,25 @@ export default function AdminDashboard() {
                 return;
             }
 
-            // Check active session first
+            // First check if the user has completed the test
+            try {
+                const completedResponse = await axios.get('http://localhost:5000/api/users/search', {
+                    params: { email: email.trim() }
+                });
+                
+                if (completedResponse.data && completedResponse.data.status === 'completed') {
+                    setUserData(completedResponse.data);
+                    setHasActiveSession(false);
+                    return;
+                }
+            } catch (searchError) {
+                // If no completed test found, continue to check for active session
+                if (searchError.response?.status !== 404) {
+                    throw searchError;
+                }
+            }
+
+            // Then check for active session
             const sessionResponse = await axios.get('http://localhost:5000/api/users/check-active-session', {
                 params: { email: email.trim() }
             });
@@ -34,7 +66,6 @@ export default function AdminDashboard() {
             setHasActiveSession(hasActiveSession);
 
             if (hasActiveSession) {
-                // If there's an active session, use that data
                 const sessionDetails = sessionResponse.data.sessionDetails;
                 setUserData({
                     email: email.trim(),
@@ -43,21 +74,10 @@ export default function AdminDashboard() {
                     startTime: sessionDetails.startTime,
                     sessionExpiresAt: sessionDetails.expiresAt
                 });
-            } else {
-                // Only try to get completed test data if there's no active session
-                try {
-                    const response = await axios.get('http://localhost:5000/api/users/search', {
-                        params: { email: email.trim() }
-                    });
-                    setUserData(response.data);
-                } catch (searchError) {
-                    if (searchError.response?.status === 404) {
-                        setError('No test data found for this user');
-                    } else {
-                        throw searchError;
-                    }
-                }
+            } else if (!hasActiveSession && !userData) {
+                setError('No test data found for this user');
             }
+
         } catch (error) {
             console.error("Search error:", error);
             setError(error.response?.data?.message || 'Error searching for user');
@@ -158,29 +178,41 @@ export default function AdminDashboard() {
         }
     };
 
-    const fetchTimerDuration = async () => {
+    const fetchEndTime = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/timer/duration');
-            setTimerDuration(response.data.durationInMinutes);
+            const response = await axios.get('http://localhost:5000/api/timer/endtime');
+            const serverTime = new Date(response.data.endTime);
+            const istTime = convertToIST(serverTime);
+            setEndTime(istTime);
         } catch (error) {
-            console.error('Error fetching timer duration:', error);
+            console.error('Error fetching timer end time:', error);
         }
     };
 
-    const updateTimerDuration = async () => {
+    const updateEndTime = async () => {
         try {
+            const utcTime = convertFromIST(endTime);
             await axios.post('http://localhost:5000/api/timer/update', {
-                durationInMinutes: timerDuration
+                endTime: utcTime.toISOString()
             });
-            alert('Timer duration updated successfully');
+            alert('Timer end time updated successfully');
         } catch (error) {
-            console.error('Error updating timer duration:', error);
-            alert('Error updating timer duration');
+            console.error('Error updating timer end time:', error);
+            alert('Error updating timer end time');
         }
+    };
+
+    const formatDateTimeLocal = (date) => {
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
     useEffect(() => {
-        fetchTimerDuration();
+        fetchEndTime();
         getCurrentCode();
     }, []);
 
@@ -323,18 +355,30 @@ export default function AdminDashboard() {
                 <h2>Timer Settings</h2>
                 <div className="timer-update-form">
                     <input
-                        type="number"
-                        value={timerDuration}
-                        onChange={(e) => setTimerDuration(Number(e.target.value))}
-                        placeholder="Enter duration in minutes"
+                        type="datetime-local"
+                        value={formatDateTimeLocal(endTime)}
+                        onChange={(e) => {
+                            const selectedDate = new Date(e.target.value);
+                            setEndTime(selectedDate);
+                        }}
                         className="search-input"
-                        min="1"
                     />
+                    {/* <div style={{ marginTop: '10px', fontSize:'0.9em', color: '#666' }}>
+                        Selected End Time (IST): {endTime.toLocaleString('en-IN', { 
+                            timeZone: 'Asia/Kolkata',
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        })}
+                    </div> */}
                     <button 
-                        onClick={updateTimerDuration}
+                        onClick={updateEndTime}
                         className="search-btn"
                     >
-                        Update Timer Duration
+                        Update End Time
                     </button>
                 </div>
             </div>

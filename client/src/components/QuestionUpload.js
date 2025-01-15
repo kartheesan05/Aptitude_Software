@@ -110,7 +110,7 @@ export default function QuestionUpload() {
       }
 
       const response = await axios.post(
-        `http://localhost:5000/api/${endpoint}`, 
+        `${process.env.REACT_APP_SERVER_HOSTNAME}/api/${endpoint}`, 
         formData,
         {
           headers: {

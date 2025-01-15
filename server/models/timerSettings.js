@@ -2,10 +2,10 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const timerSettingsSchema = new Schema({
-    durationInMinutes: { 
-        type: Number, 
+    endTime: {
+        type: Date,
         required: true,
-        default: 90
+        default: () => new Date(Date.now() + 90 * 60000) // Default 90 minutes from now
     },
     isActive: {
         type: Boolean,

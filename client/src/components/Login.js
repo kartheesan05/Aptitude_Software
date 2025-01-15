@@ -5,19 +5,34 @@ import { resetResultAction, setUserDetails } from '../redux/result_reducer';
 import { resetAllAction } from '../redux/question_reducer';
 import '../styles/Login.css';
 import axios from 'axios';
+import DeviceDetection from './DeviceDetection';
 
 const departments = [
-    { id: 'cs', name: 'Computer Science and Engineering', coreCategory: 'cs' },
-    { id: 'it', name: 'Information Technology', coreCategory: 'it' },
-    { id: 'ec', name: 'Electronics and Communication Engineering', coreCategory: 'ec' },
-    { id: 'ee', name: 'Electrical and Electronics Engineering', coreCategory: 'ee' },
-    { id: 'mech', name: 'Mechanical Engineering', coreCategory: 'mech' },
-    { id: 'civil', name: 'Civil Engineering', coreCategory: 'civil' },
-    { id: 'chem', name: 'Chemical Engineering', coreCategory: 'chem' },
-    { id: 'bio', name: 'Biotechnology', coreCategory: 'bio' },
+    // { id: 'cs', name: 'Computer Science and Engineering', coreCategory: 'cs' },
+    // { id: 'it', name: 'Information Technology', coreCategory: 'it' },
+    // { id: 'ec', name: 'Electronics and Communication Engineering', coreCategory: 'ec' },
+    // { id: 'ee', name: 'Electrical and Electronics Engineering', coreCategory: 'ee' },
+    // { id: 'mech', name: 'Mechanical Engineering', coreCategory: 'mech' },
+    // { id: 'civil', name: 'Civil Engineering', coreCategory: 'civil' },
+    // { id: 'chem', name: 'Chemical Engineering', coreCategory: 'chem' },
+    // { id: 'bio', name: 'Biotechnology', coreCategory: 'bio' },
+    // { id: 'aids', name: 'Artificial Intelligence and Data Science', coreCategory: 'aids' },
+    // { id: 'auto', name: 'Automobile Engineering', coreCategory: 'auto' },
+    // // { id: 'marine', name: 'Marine Engineering', coreCategory: 'marine' }
+    // { id: 'marine', name: 'Mechanical and Automobile Engineering', coreCategory: 'marine' }
+
     { id: 'aids', name: 'Artificial Intelligence and Data Science', coreCategory: 'aids' },
     { id: 'auto', name: 'Automobile Engineering', coreCategory: 'auto' },
-    { id: 'marine', name: 'Marine Engineering', coreCategory: 'marine' }
+    { id: 'bio', name: 'Biotechnology', coreCategory: 'bio' },
+    { id: 'chem', name: 'Chemical Engineering', coreCategory: 'chem' },
+    { id: 'civil', name: 'Civil Engineering', coreCategory: 'civil' },
+    { id: 'cs', name: 'Computer Science and Engineering', coreCategory: 'cs' },
+    { id: 'ee', name: 'Electrical and Electronics Engineering', coreCategory: 'ee' },
+    { id: 'ec', name: 'Electronics and Communication Engineering', coreCategory: 'ec' },
+    { id: 'marine', name: 'Mechanical and Automobile Engineering', coreCategory: 'marine' },
+    { id: 'mech', name: 'Mechanical Engineering', coreCategory: 'mech' },
+    { id: 'it', name: 'Information Technology', coreCategory: 'it' }
+
 ];
 
 export default function Login() {
@@ -140,6 +155,7 @@ export default function Login() {
 
     return (
         <div className='container'>
+            <DeviceDetection />
             <h1 className='title text-light'>Login</h1>
 
             <form className='textbox' onSubmit={handleSubmit}>

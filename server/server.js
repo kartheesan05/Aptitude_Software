@@ -52,7 +52,7 @@ const initializeAccessCode = async () => {
         const existingCode = await AccessCode.findOne({ isActive: true });
         if (!existingCode) {
             await AccessCode.create({ 
-                code: 'SVCE2024',  // This is your default code
+                code: 'SVCE2024',  
                 isActive: true 
             });
             console.log('Default access code created: SVCE2024');
@@ -62,7 +62,6 @@ const initializeAccessCode = async () => {
     }
 };
 
-// Initialize default code when server starts
 mongoose.connect(mongoURI)
     .then(() => {
         console.log("Database Connected");

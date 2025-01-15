@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import '../styles/Instructions.css';
+import DeviceDetection from './DeviceDetection';
 
 export default function Instructions() {
     const navigate = useNavigate();
@@ -51,6 +52,7 @@ export default function Instructions() {
 
     return (
         <div className='container'>
+            <DeviceDetection />
             {/* <h1 className='title'>Instructions</h1> */}
             
             <div className='instructions'>

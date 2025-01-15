@@ -1,5 +1,6 @@
 import '../styles/App.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import MobileRestriction from './MobileRestriction'
 
 import Login from './Login';
 import Quiz from './Quiz';
@@ -49,6 +50,10 @@ const router = createBrowserRouter([
   {
     path: '/success',
     element: <Success />
+  },
+  {
+    path: '/mobile-restriction',
+    element: <MobileRestriction />
   }
 ]);
 
@@ -60,5 +65,4 @@ if (typeof window !== 'undefined') {
 function App() {
   return <RouterProvider router={router} />;
 }
-
 export default App;

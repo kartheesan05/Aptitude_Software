@@ -2,26 +2,35 @@ import express from 'express';
 import TimerSettings from '../models/timerSettings.js';
 const router = express.Router();
 
-router.get('/duration', async (req, res) => {
+router.get('/endtime', async (req, res) => {
     try {
         const settings = await TimerSettings.findOne({ isActive: true });
-        res.json({ durationInMinutes: settings?.durationInMinutes || 90 });
+        if (!settings) {
+            // Create default end time if none exists
+            const defaultEndTime = new Date(Date.now() + 90 * 60000);
+            const newSettings = await TimerSettings.create({
+                endTime: defaultEndTime,
+                isActive: true
+            });
+            return res.json({ endTime: newSettings.endTime });
+        }
+        res.json({ endTime: settings.endTime });
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching timer duration' });
+        res.status(500).json({ message: 'Error fetching timer end time' });
     }
 });
 
 router.post('/update', async (req, res) => {
     try {
-        const { durationInMinutes } = req.body;
+        const { endTime } = req.body;
         await TimerSettings.updateOne(
             { isActive: true },
-            { durationInMinutes },
+            { endTime: new Date(endTime) },
             { upsert: true }
         );
-        res.json({ message: 'Timer duration updated successfully' });
+        res.json({ message: 'Timer end time updated successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'Error updating timer duration' });
+        res.status(500).json({ message: 'Error updating timer end time' });
     }
 });
 

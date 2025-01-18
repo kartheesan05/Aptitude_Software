@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../axios/axios'
@@ -31,6 +31,10 @@ export default function Feedback() {
     const { 
         result: { result, username, email, regNo, department, departmentId }
     } = useSelector(state => state);
+
+    useEffect(() => {
+        sessionStorage.setItem('testTaken', true);
+    }, []);
 
     const [feedbackData, setFeedbackData] = useState({
         q1: 0,

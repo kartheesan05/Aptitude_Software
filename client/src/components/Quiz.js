@@ -56,6 +56,13 @@ export default function Quiz() {
 
     useEffect(() => {
         // Get user data from session storage if it exists
+
+        const testTaken = sessionStorage.getItem('testTaken');
+        if (testTaken) {
+            navigate('/feedback?t=completed');
+            return;
+        }
+
         const storedUserData = sessionStorage.getItem('userData');
         if (storedUserData) {
             const userData = JSON.parse(storedUserData);

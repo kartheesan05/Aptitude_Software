@@ -16,6 +16,7 @@ export default function AdminLogin() {
       
       // Store the token
       sessionStorage.setItem('token', data.token);
+      sessionStorage.setItem('role', data.role);
       
       // Navigate based on role
       if (data.role === 'admin') {

@@ -2,6 +2,12 @@ import express from 'express';
 import Result from '../models/resultSchema.js';
 import AccessCode from '../models/accessCodeSchema.js';
 import ActiveSession from '../models/activeSession.js';
+import jwt from 'jsonwebtoken';
+import { auth, checkRole } from '../middleware/auth.js';
+import { AptitudeQuestion, CoreQuestion, VerbalQuestion, ProgrammingQuestion } from '../models/questionSchema.js';
+import GeneratedQuestions from '../models/generatedQuestionsSchema.js';
+import Comprehension from '../models/comprehensionSchema.js';
+import { body, validationResult } from 'express-validator';
 const router = express.Router();
 
 // Search user by email only
@@ -240,9 +246,25 @@ router.post('/admin/init-code', async (req, res) => {
 });
 
 // Check if user has an active session or has completed test
-router.post('/check-session', async (req, res) => {
+router.post('/check-session',[body('email').exists(), body('regNo').exists(), body('accessCode').exists()], async (req, res) => {
     try {
-        const { email, regNo } = req.body;
+
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { email, regNo, department, accessCode, username } = req.body;
+
+        // Verify access code
+        const validCode = await AccessCode.findOne({ 
+            code: accessCode,
+            isActive: true 
+        });
+
+        if (!validCode) {
+            return res.status(400).json({ message: 'Invalid access code' });
+        }
 
         // First check if user has already completed the test
         const existingResult = await Result.findOne({ email, regNo });
@@ -264,10 +286,14 @@ router.post('/check-session', async (req, res) => {
             });
         }
 
+        const token = jwt.sign({ email, regNo, department, username, role: 'student' }, process.env.JWT_SECRET, { expiresIn: '24h' });
+
         return res.json({ 
             canTakeTest: true, 
             hasActiveSession: false,
-            message: 'User can take test'
+            message: 'User can take test',
+            token: token,
+            role: 'student'
         });
 
     } catch (error) {
@@ -276,9 +302,9 @@ router.post('/check-session', async (req, res) => {
 });
 
 // Create a new session when user starts test
-router.post('/create-session', async (req, res) => {
+router.post('/create-session', auth, checkRole(['student']), async (req, res) => {
     try {
-        const { email, regNo } = req.body;
+        const { email, regNo, department } = req.user;
         
         const newSession = new ActiveSession({
             email,
@@ -287,28 +313,186 @@ router.post('/create-session', async (req, res) => {
         });
 
         await newSession.save();
-        res.json({ message: 'Session created successfully' });
+
+        // Fetch random questions for each category
+        const [aptitudeQuestions, coreQuestions, verbalQuestions, programmingQuestions, comprehensionQuestions] = await Promise.all([
+            // 10 random aptitude questions
+            AptitudeQuestion.aggregate([{ $sample: { size: 10 } }]),
+            // 20 random core questions matching department
+            CoreQuestion.aggregate([
+                { $match: { category: department } },
+                { $sample: { size: 20 } }
+            ]),
+            // 5 random verbal questions
+            VerbalQuestion.aggregate([{ $sample: { size: 5 } }]),
+            // 10 random programming questions
+            ProgrammingQuestion.aggregate([{ $sample: { size: 10 } }]),
+            // 1 random comprehension question
+            Comprehension.aggregate([{ $sample: { size: 1 } }])
+        ]);
+
+        // Create new generated questions document
+        const generatedQuestions = new GeneratedQuestions({
+            regNo,
+            email,
+            department,
+            aptitudeQuestions: aptitudeQuestions.map(q => q._id),
+            coreQuestions: coreQuestions.map(q => q._id),
+            verbalQuestions: verbalQuestions.map(q => q._id),
+            programmingQuestions: programmingQuestions.map(q => q._id),
+            comprehensionQuestions: comprehensionQuestions.map(q => q._id)
+        });
+
+        await generatedQuestions.save();
+
+        // Prepare questions data for response
+        const questionsData = {
+            aptitude: aptitudeQuestions.map(q => ({
+                question: q.question,
+                options: q.options.map((opt, i) => i === q.correctAnswer ? opt + ' *' : opt),
+                image: q.image || null
+            })),
+            core: coreQuestions.map(q => ({
+                question: q.question,
+                options: q.options.map((opt, i) => i === q.correctAnswer ? opt + ' *' : opt),
+                image: q.image || null
+            })),
+            verbal: verbalQuestions.map(q => ({
+                question: q.question,
+                options: q.options.map((opt, i) => i === q.correctAnswer ? opt + ' *' : opt),
+                image: q.image || null
+            })),
+            programming: programmingQuestions.map(q => ({
+                question: q.question,
+                options: q.options.map((opt, i) => i === q.correctAnswer ? opt + ' *' : opt),
+                image: q.image || null
+            })),
+            comprehension: comprehensionQuestions.map(q => ({
+                passage: q.passage,
+                image: q.image || null,
+                q1: {question: q.q1.question, options: q.q1.options.map((opt, i) => i === q.q1.correctAnswer ? opt + ' *' : opt)},
+                q2: {question: q.q2.question, options: q.q2.options.map((opt, i) => i === q.q2.correctAnswer ? opt + ' *' : opt)},
+                q3: {question: q.q3.question, options: q.q3.options.map((opt, i) => i === q.q3.correctAnswer ? opt + ' *' : opt)},
+                q4: {question: q.q4.question, options: q.q4.options.map((opt, i) => i === q.q4.correctAnswer ? opt + ' *' : opt)},
+                q5: {question: q.q5.question, options: q.q5.options.map((opt, i) => i === q.q5.correctAnswer ? opt + ' *' : opt)}
+            }))
+        };
+
+        res.json({ 
+            message: 'Session created successfully',
+            questions: questionsData
+        });
 
     } catch (error) {
+        console.error('Error creating session:', error);
         res.status(500).json({ message: error.message });
     }
 });
 
-// Clear session when test is completed
-router.post('/clear-session', async (req, res) => {
+router.post('/submit-test', auth, checkRole(['student']), async (req, res) => {
     try {
-        const { email, regNo } = req.body;
-        
-        await ActiveSession.findOneAndDelete({ email, regNo });
-        res.json({ message: 'Session cleared successfully' });
+        const { email, regNo } = req.user;
+        const { answers } = req.body;
 
+        // Get the generated questions for this user
+        const generatedQuestions = await GeneratedQuestions.findOne({ email, regNo });
+        if (!generatedQuestions) {
+            return res.status(404).json({ message: 'No generated questions found for this user' });
+        }
+
+        // Populate all question types with their full data
+        await generatedQuestions.populate([
+            { path: 'aptitudeQuestions', model: AptitudeQuestion },
+            { path: 'coreQuestions', model: CoreQuestion },
+            { path: 'verbalQuestions', model: VerbalQuestion },
+            { path: 'programmingQuestions', model: ProgrammingQuestion },
+            { path: 'comprehensionQuestions', model: Comprehension }
+        ]);
+
+        let totalPoints = 0;
+        let resultArray = [];
+
+        // Calculate points for each question type
+        const questionTypes = [
+            { key: 'aptitude', questions: generatedQuestions.aptitudeQuestions, points: 1 },
+            { key: 'core', questions: generatedQuestions.coreQuestions, points: 1 },
+            { key: 'verbal', questions: generatedQuestions.verbalQuestions, points: 1 },
+            { key: 'programming', questions: generatedQuestions.programmingQuestions, points: 1 }
+        ];
+
+        // Process regular questions (aptitude, core, verbal, programming)
+        for (const type of questionTypes) {
+            const userAnswers = answers[type.key] || [];
+            let sectionPoints = 0;
+            
+            type.questions.forEach((question, index) => {
+                const isCorrect = userAnswers[index] === question.correctAnswer;
+                const pointsEarned = isCorrect ? type.points : 0;
+                sectionPoints += pointsEarned;
+                resultArray.push({
+                    question: question.question,
+                    submitted: userAnswers[index],
+                    correct: question.correctAnswer,
+                    points: pointsEarned
+                });
+            });
+            totalPoints += sectionPoints;
+        }
+
+        // Process comprehension questions
+        const comprehension = generatedQuestions.comprehensionQuestions[0];
+        const comprehensionAnswers = answers.comprehension || [];
+        let comprehensionPoints = 0;
+        
+        ['q1', 'q2', 'q3', 'q4', 'q5'].forEach((q, index) => {
+            const isCorrect = comprehensionAnswers[index] === comprehension[q].correctAnswer;
+            const pointsEarned = isCorrect ? 1 : 0;
+            comprehensionPoints += pointsEarned;
+            resultArray.push({
+                question: comprehension[q].question,
+                submitted: comprehensionAnswers[index],
+                correct: comprehension[q].correctAnswer,
+                points: pointsEarned
+            });
+        });
+        totalPoints += comprehensionPoints;
+
+        // Calculate total questions
+        const totalQuestions = resultArray.length;
+
+        // Create result document
+        const result = new Result({
+            username: req.user.username || 'Anonymous',
+            email,
+            regNo,
+            dept: req.user.department,
+            points: totalPoints,
+            attempts: 1,
+            totalQuestions,
+            result: resultArray
+        });
+
+        await result.save();
+
+        // Clear the active session
+        await ActiveSession.findOneAndDelete({ email, regNo });
+
+        // Delete generated questions
+        await GeneratedQuestions.findOneAndDelete({ email, regNo });
+
+        res.json({
+            message: 'Test submitted successfully'
+        });
+        
     } catch (error) {
+        console.error('Test submission error:', error);
         res.status(500).json({ message: error.message });
     }
 });
+
 
 // Check if user has an active session (admin route)
-router.get('/check-active-session', async (req, res) => {
+router.get('/check-active-session',auth, checkRole(['admin']), async (req, res) => {
     try {
         const { email } = req.query;
         const activeSession = await ActiveSession.findOne({ email });
@@ -323,7 +507,7 @@ router.get('/check-active-session', async (req, res) => {
 });
 
 // Admin route to clear active session
-router.post('/admin-clear-session', async (req, res) => {
+router.post('/admin-clear-session', auth, checkRole(['admin']), async (req, res) => {
     try {
         const { email } = req.body;
         await ActiveSession.findOneAndDelete({ email });
@@ -338,7 +522,7 @@ router.post('/admin-clear-session', async (req, res) => {
 });
 
 // Add this new route to check test status
-router.get('/check-test-status', async (req, res) => {
+router.get('/check-test-status', auth, checkRole(['admin']), async (req, res) => {
     try {
         const { email, regNo } = req.query;
         

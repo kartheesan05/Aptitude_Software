@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { useFetchQestion, MoveNextQuestion, MovePrevQuestion } from '../hooks/FetchQuestion'
 import { updateResult } from '../redux/result_reducer'
 import '../styles/App.css'
 import TabDetection from './TabDetection'
-import axios from 'axios'
-import { postServerData } from '../helper/helper'
+import api from '../axios/axios'
 import QuestionNavigation from './QuestionNavigation'
 import DeviceDetection from './DeviceDetection'
 
@@ -17,11 +15,35 @@ export default function Quiz() {
     const [endTime, setEndTime] = useState(null);
     const [timeLeft, setTimeLeft] = useState(null);
     const [isTimeUp, setIsTimeUp] = useState(false);
+    const [questions, setQuestions] = useState(null);
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const dispatch = useDispatch();
     const navigate = useNavigate();
+
+    const handleSubmitTest = async (timeUp = false) => {
+        try {
+            const quizState = JSON.parse(sessionStorage.getItem('quizState'));
+            if (!quizState || !quizState.results) {
+                throw new Error('No quiz results found');
+            }
+
+            // Structure the answers according to sections
+            const answers = {
+                aptitude: quizState.results.slice(0, 10),
+                core: quizState.results.slice(10, 30),
+                verbal: quizState.results.slice(30, 35),
+                comprehension: quizState.results.slice(35, 40),
+                programming: quizState.results.slice(40, 50)
+            };
+
+            await api.post('/api/users/submit-test', { answers });
+            timeUp ? navigate('/feedback?t=timeout') : navigate('/feedback?t=completed');
+        } catch (error) {
+            console.error('Error submitting test:', error);
+        }
+    };
     
     const { 
-        questions: { queue, answers, trace, categories },
         result: { 
             result, 
             username,
@@ -32,7 +54,88 @@ export default function Quiz() {
         }
     } = useSelector(state => state);
 
-    const [{ isLoading, serverError }] = useFetchQestion();
+    useEffect(() => {
+        // Get user data from session storage if it exists
+        const storedUserData = sessionStorage.getItem('userData');
+        if (storedUserData) {
+            const userData = JSON.parse(storedUserData);
+            dispatch({ type: 'SET_USER_DATA', payload: userData });
+        } else if (!username) {
+            navigate('/');
+            return;
+        }
+
+        // Load questions from session storage
+        const storedQuestions = sessionStorage.getItem('quizQuestions');
+        if (!storedQuestions) {
+            navigate('/instructions');
+            return;
+        }
+
+        const parsedQuestions = JSON.parse(storedQuestions);
+        
+        // Combine all questions into a single array
+        const allQuestions = [
+            ...parsedQuestions.aptitude.map(q => ({ ...q, category: 'Aptitude' })),
+            ...parsedQuestions.core.map(q => ({ ...q, category: 'Core' })),
+            ...parsedQuestions.verbal.map(q => ({ ...q, category: 'Verbal' })),
+            // Add comprehension questions
+            ...[
+                { question: parsedQuestions.comprehension[0].q1.question, options: parsedQuestions.comprehension[0].q1.options, category: 'Comprehension' },
+                { question: parsedQuestions.comprehension[0].q2.question, options: parsedQuestions.comprehension[0].q2.options, category: 'Comprehension' },
+                { question: parsedQuestions.comprehension[0].q3.question, options: parsedQuestions.comprehension[0].q3.options, category: 'Comprehension' },
+                { question: parsedQuestions.comprehension[0].q4.question, options: parsedQuestions.comprehension[0].q4.options, category: 'Comprehension' },
+                { question: parsedQuestions.comprehension[0].q5.question, options: parsedQuestions.comprehension[0].q5.options, category: 'Comprehension' }
+            ],
+            ...parsedQuestions.programming.map(q => ({ ...q, category: 'Programming' }))
+        ];
+
+        // Store the passage separately for comprehension questions
+        sessionStorage.setItem('comprehensionPassage', parsedQuestions.comprehension[0].passage);
+
+        setQuestions(allQuestions);
+
+        // Load saved quiz state if it exists
+        const savedQuizState = sessionStorage.getItem('quizState');
+        if (savedQuizState) {
+            const { currentIndex, results } = JSON.parse(savedQuizState);
+            setCurrentQuestionIndex(currentIndex);
+            dispatch({ type: 'SET_RESULT', payload: results });
+            // Set the check state for the current question
+            setChecked(results[currentIndex]);
+        } else {
+            const initialResults = Array(allQuestions.length).fill(undefined);
+            dispatch({ type: 'SET_RESULT', payload: initialResults });
+            setChecked(undefined);
+            // Save initial state
+            sessionStorage.setItem('quizState', JSON.stringify({
+                currentIndex: 0,
+                results: initialResults
+            }));
+        }
+        
+        enterFullscreen();
+    }, []);
+
+    // Save quiz state whenever it changes
+    useEffect(() => {
+        if (questions && result) {
+            const quizState = {
+                currentIndex: currentQuestionIndex,
+                results: result
+            };
+            sessionStorage.setItem('quizState', JSON.stringify(quizState));
+            // Update check state whenever result changes
+            setChecked(result[currentQuestionIndex]);
+        }
+    }, [currentQuestionIndex, result]);
+
+    // Update check state whenever current question changes
+    useEffect(() => {
+        if (result && result.length > 0) {
+            setChecked(result[currentQuestionIndex]);
+        }
+    }, [currentQuestionIndex, result]);
 
     const enterFullscreen = async () => {
         try {
@@ -49,17 +152,6 @@ export default function Quiz() {
             console.log('Fullscreen request failed');
         }
     };
-
-    useEffect(() => {
-        if(!username) {
-            navigate('/');
-            return;
-        }
-        dispatch({ type: 'SET_TRACE', payload: 0 });
-        dispatch({ type: 'SET_RESULT', payload: [] });
-        setChecked(undefined);
-        enterFullscreen();
-    }, []);
 
     useEffect(() => {
         const handleFullscreenChange = () => {
@@ -80,84 +172,68 @@ export default function Quiz() {
     }, []);
 
     useEffect(() => {
-        if(queue && queue.length > 0) {
+        if(questions && questions.length > 0) {
             dispatch({ type: 'SET_TRACE', payload: 0 });
-            
-            if (!result.length) {
-                dispatch({ type: 'SET_RESULT', payload: Array(queue.length).fill(undefined) });
-            }
         }
-    }, [queue]);
+    }, [questions]);
 
     useEffect(() => {
-        console.log("Current trace:", trace);
+        console.log("Current trace:", currentQuestionIndex);
         console.log("Current result:", result);
-        setChecked(result[trace]);
-    }, [trace]);
-
-    useEffect(() => {
-        const preventBackButton = (e) => {
-            e.preventDefault();
-            e.returnValue = '';
-            alert("Please use the navigation buttons within the quiz. Don't use browser navigation.");
-        };
-
-        const preventBackNavigation = () => {
-            alert("Please use the navigation buttons within the quiz. Don't use browser navigation.");
-            navigate('/quiz', { replace: true });
-        };
-
-        window.addEventListener('beforeunload', preventBackButton);
-        window.history.pushState(null, null, window.location.pathname);
-        window.addEventListener('popstate', preventBackNavigation);
-
-        return () => {
-            window.removeEventListener('beforeunload', preventBackButton);
-            window.removeEventListener('popstate', preventBackNavigation);
-        };
-    }, [navigate]);
+        setChecked(result[currentQuestionIndex]);
+    }, [currentQuestionIndex]);
 
     function onNext(){
-        if(trace < queue?.length){
+        if(currentQuestionIndex < questions?.length){
             if(check !== undefined){
-                dispatch(updateResult({ trace, checked: check }));
+                dispatch(updateResult({ trace: currentQuestionIndex, checked: check }));
             }
             
-            if(trace === queue?.length - 1){
+            if(currentQuestionIndex === questions?.length - 1){
                 const unanswered = getUnansweredQuestions();
-                if (unanswered.length > 0) {
-                    setShowConfirmation(true);
-                } else {
-                    navigate('/feedback', { state: { fromQuiz: true } });
-                }
+                setShowConfirmation(true);
                 return;
             }
 
-            dispatch(MoveNextQuestion());
+            setCurrentQuestionIndex(prev => prev + 1);
+            setChecked(result[currentQuestionIndex + 1]);
         }
     }
 
     function onPrev(){
-        if(trace > 0){
-            dispatch(MovePrevQuestion());
+        if(currentQuestionIndex > 0){
+            setCurrentQuestionIndex(prev => prev - 1);
+            setChecked(result[currentQuestionIndex - 1]);
         }
     }
 
     function onSelect(i) {
         setChecked(i);
-        dispatch(updateResult({ trace, checked: i }));
+        dispatch(updateResult({ trace: currentQuestionIndex, checked: i }));
+        
+        // Save quiz state immediately after selecting an answer
+        const updatedResults = [...result];
+        updatedResults[currentQuestionIndex] = i;
+        const quizState = {
+            currentIndex: currentQuestionIndex,
+            results: updatedResults
+        };
+        sessionStorage.setItem('quizState', JSON.stringify(quizState));
     }
 
     const getUnansweredQuestions = () => {
         return result
-            .map((ans, index) => ({ index: index + 1, answered: ans !== undefined }))
+            .map((ans, index) => ({ 
+                index: index + 1, 
+                answered: ans !== undefined && ans !== null 
+            }))
             .filter(q => !q.answered)
             .map(q => q.index);
     };
 
     const fetchEndTime = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/timer/endtime');
+            const response = await api.get('/api/timer/endtime');
             const serverTime = new Date(response.data.endTime);
             const istTime = new Date(serverTime.getTime() + (5.5 * 60 * 60 * 1000));
             setEndTime(istTime);
@@ -196,28 +272,7 @@ export default function Quiz() {
 
     const handleTimeUp = async () => {
         try {
-            const resultData = {
-                username,
-                email,
-                regNo,
-                department,
-                departmentId,
-                result,
-                attempts: result.filter(r => r !== undefined).length,
-                points: result.reduce((score, ans, i) => 
-                    score + (Number(ans) === Number(answers[i]) ? 1 : 0), 0),
-                totalQuestions: queue.length
-            };
-
-            await postServerData(
-                `${process.env.REACT_APP_SERVER_HOSTNAME}/api/result`,
-                resultData
-            );
-
-            navigate('/feedback', { 
-                replace: true, 
-                state: { fromQuiz: true, resultSubmitted: true }
-            });
+            await handleSubmitTest(true);
         } catch (error) {
             console.error('Error handling time up:', error);
         }
@@ -237,12 +292,14 @@ export default function Quiz() {
 
     const categorizeQuestions = (questions) => {
         return questions.reduce((acc, q, index) => {
-            if (index < 15) {
+            if (index < 10) {
                 acc.aptitude.push({ ...q, index });
             } else if (index < 30) {
                 acc.core.push({ ...q, index });
-            } else if (index < 40) {
+            } else if (index < 35) {
                 acc.verbal.push({ ...q, index });
+            } else if (index < 40) {
+                acc.comprehension.push({ ...q, index });
             } else {
                 acc.programming.push({ ...q, index });
             }
@@ -251,18 +308,20 @@ export default function Quiz() {
             aptitude: [],
             core: [],
             verbal: [],
+            comprehension: [],
             programming: []
         });
     };
 
     const getQuestionsByCategory = () => {
-        if (!queue || !Array.isArray(queue)) return null;
+        if (!questions || !Array.isArray(questions)) return null;
         
         return {
-            aptitude: queue.filter((q, i) => i < 15),
-            core: queue.filter((q, i) => i >= 15 && i < 30),
-            verbal: queue.filter((q, i) => i >= 30 && i < 40),
-            programming: queue.filter((q, i) => i >= 40 && i < 50)
+            aptitude: questions.filter((q, i) => i < 10),
+            core: questions.filter((q, i) => i >= 10 && i < 30),
+            verbal: questions.filter((q, i) => i >= 30 && i < 35),
+            comprehension: questions.filter((q, i) => i >= 35 && i < 40),
+            programming: questions.filter((q, i) => i >= 40 && i < 50)
         };
     };
 
@@ -270,22 +329,24 @@ export default function Quiz() {
         const categorizedQuestions = getQuestionsByCategory();
         if (!categorizedQuestions) return [];
 
-        if (trace < 15) return categorizedQuestions.aptitude;
-        if (trace < 30) return categorizedQuestions.core;
-        if (trace < 40) return categorizedQuestions.verbal;
+        if (currentQuestionIndex < 10) return categorizedQuestions.aptitude;
+        if (currentQuestionIndex < 30) return categorizedQuestions.core;
+        if (currentQuestionIndex < 35) return categorizedQuestions.verbal;
+        if (currentQuestionIndex < 40) return categorizedQuestions.comprehension;
         return categorizedQuestions.programming;
     };
 
     const getCurrentCategory = () => {
-        if (trace < 15) return 'Aptitude';
-        if (trace < 30) return 'Core';
-        if (trace < 40) return 'Verbal';
+        if (currentQuestionIndex < 10) return 'Aptitude';
+        if (currentQuestionIndex < 30) return 'Core';
+        if (currentQuestionIndex < 35) return 'Verbal';
+        if (currentQuestionIndex < 40) return 'Comprehension';
         return 'Programming';
     };
 
     const getCurrentQuestion = () => {
-        if (!queue || !Array.isArray(queue)) return null;
-        const currentQuestion = queue[trace];
+        if (!questions || !Array.isArray(questions)) return null;
+        const currentQuestion = questions[currentQuestionIndex];
         if (!currentQuestion) return null;
 
         return {
@@ -314,16 +375,26 @@ export default function Quiz() {
         return () => window.removeEventListener('resize', checkDevice);
     }, []);
 
-    if(isLoading) return <h3 className='text-light'>isLoading</h3>
-    if(serverError) return <h3 className='text-light'>{serverError || "Unknown Error"}</h3>
-    if(!queue || !queue[trace]) return <h3 className='text-light'>Loading questions...</h3>
+    // Add function to get comprehension passage
+    const getComprehensionPassage = () => {
+        return sessionStorage.getItem('comprehensionPassage');
+    };
+
+    if(!questions) return <h3 className='text-light'>Loading questions...</h3>
+
+    const currentQuestion = questions[currentQuestionIndex];
 
     return (
         <div className="container">
             <DeviceDetection />
-            <QuestionNavigation />
+            <TabDetection onSubmitTest={handleSubmitTest} />
+            <QuestionNavigation 
+                questions={questions} 
+                currentQuestionIndex={currentQuestionIndex}
+                onQuestionClick={(index) => setCurrentQuestionIndex(index)}
+            />
             <div className="main-content">
-                <h2 className="section-title">{getCurrentCategory()} Section</h2>
+                <h2 className="section-title">{currentQuestion.category} Section</h2>
                 {!isFullscreen && (
                     <div className="fullscreen-notice" style={{
                         backgroundColor: '#17c6e5',
@@ -368,7 +439,7 @@ export default function Quiz() {
                     Time Left: {formatTime(timeLeft)}
                 </div>
 
-                <TabDetection />
+                {/* <TabDetection /> */}
 
                 {showConfirmation && (
                 <div className="confirmation-dialog" style={{
@@ -390,24 +461,33 @@ export default function Quiz() {
                         fontSize: '18px',
                         fontWeight: 'bold',
                     }}>
-                        Unanswered Questions
+                        {getUnansweredQuestions().length > 0 ? 'Unanswered Questions' : 'Confirm Submission'}
                     </h3>
-                    <p style={{
-                        color: '#000', 
-                        fontSize: '16px',
-                    }}>
-                        You have not answered the following questions:
-                        <br />
-                        <span style={{
-                            fontWeight: 'bold',
-                            display: 'block',
-                            marginTop: '10px',
+                    {getUnansweredQuestions().length > 0 ? (
+                        <p style={{
                             color: '#000', 
                             fontSize: '16px',
                         }}>
-                            {getUnansweredQuestions().join(', ')}
-                        </span>
-                    </p>
+                            You have not answered the following questions:
+                            <br />
+                            <span style={{
+                                fontWeight: 'bold',
+                                display: 'block',
+                                marginTop: '10px',
+                                color: '#000', 
+                                fontSize: '16px',
+                            }}>
+                                {getUnansweredQuestions().join(', ')}
+                            </span>
+                        </p>
+                    ) : (
+                        <p style={{
+                            color: '#000', 
+                            fontSize: '16px',
+                        }}>
+                            Are you sure you want to submit your quiz? You won't be able to change your answers after submission.
+                        </p>
+                    )}
                     <div style={{
                         marginTop: '20px',
                         display: 'flex',
@@ -430,9 +510,7 @@ export default function Quiz() {
                             Continue Answering
                         </button>
                         <button
-                            onClick={() => navigate('/feedback', { 
-                                state: { fromQuiz: true, resultSubmitted: true } 
-                            })}
+                            onClick={handleSubmitTest}
                             style={{
                                 padding: '8px 16px',
                                 backgroundColor: '#dc3545',
@@ -452,34 +530,57 @@ export default function Quiz() {
 )}
 
 
-                {getCurrentQuestion() && (
+                {currentQuestion && (
                     <div className='questions'>
+                        {currentQuestionIndex >= 35 && currentQuestionIndex <= 39 && (
+                            <div className="comprehension-passage" style={{
+                                backgroundColor: '#f8f9fa',
+                                padding: '20px',
+                                marginBottom: '20px',
+                                borderRadius: '8px',
+                                border: '1px solid #dee2e6'
+                            }}>
+                                <h3 style={{ marginBottom: '15px', color: '#1eb2a6' }}>Reading Comprehension</h3>
+                                <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{getComprehensionPassage()}</p>
+                            </div>
+                        )}
                         <h2 className='text-light'>
-                            {getCurrentQuestion().question}
+                            {"("}{currentQuestionIndex + 1}{")"} {currentQuestion.question}
                         </h2>
 
-                        {getCurrentQuestion().image && (
-                            <div className="question-image-container">
+                        {currentQuestion.image && (
+                            <div className="question-image-container" style={{
+                                margin: '20px 0',
+                                textAlign: 'center',
+                                maxWidth: '100%',
+                                overflow: 'hidden',
+                                borderRadius: '8px',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                            }}>
                                 <img 
-                                    src={`http://localhost:5000${getCurrentQuestion().image}`} 
+                                    src={currentQuestion.image}
                                     alt="Question" 
-                                    className="question-image"
+                                    style={{
+                                        maxWidth: '100%',
+                                        maxHeight: '400px',
+                                        objectFit: 'contain'
+                                    }}
                                 />
                             </div>
                         )}
 
-                        <ul key={`question-${trace}`}>
-                            {getCurrentQuestion().options?.map((q, i) => (
-                                <li key={`q${trace}-${i}`}>
+                        <ul key={`question-${currentQuestionIndex}`}>
+                            {currentQuestion.options?.map((q, i) => (
+                                <li key={`q${currentQuestionIndex}-${i}`}>
                                     <input 
                                         type="radio"
                                         value={i}
-                                        name={`question-${trace}`}
-                                        id={`q${trace}-${i}`}
+                                        name={`question-${currentQuestionIndex}`}
+                                        id={`q${currentQuestionIndex}-${i}`}
                                         onChange={() => onSelect(i)}
                                         checked={check === i}
                                     />
-                                    <label className='text-primary' htmlFor={`q${trace}-${i}`}>{q}</label>
+                                    <label className='text-primary' htmlFor={`q${currentQuestionIndex}-${i}`}>{q}</label>
                                     <div className={`check ${check === i ? 'checked' : ''}`}></div>
                                 </li>
                             ))}
@@ -488,12 +589,12 @@ export default function Quiz() {
                 )}
 
                 <div className='grid'>
-                    {trace > 0 ? 
+                    {currentQuestionIndex > 0 ? 
                         <button className='btn prev' onClick={onPrev} style={{width: '100px'}}>Prev</button> 
                         : <div></div>
                     }
                     <button className='btn next' onClick={onNext} style={{width: '100px'}}>
-                        {trace === queue?.length - 1 ? 'Finish' : 'Next'}
+                        {currentQuestionIndex === questions?.length - 1 ? 'Finish' : 'Next'}
                     </button>
                 </div>
             </div>

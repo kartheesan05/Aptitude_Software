@@ -1,47 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { postServerData } from '../helper/helper';
 import beepSound from '../assets/beep.js';
 
-function useTabVisibility() {
+function useTabVisibility({ onSubmitTest }) {
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const [alertShown, setAlertShown] = useState(false);
   const [audio] = useState(new Audio(beepSound));
   const navigate = useNavigate();
-
-  // Get required data from Redux store
-  const { 
-    result: { username, email, regNo, department, departmentId },
-    questions: { queue, answers },
-    result: { result }
-  } = useSelector(state => state);
-
-  const submitResult = async () => {
-    try {
-      const resultData = {
-        username,
-        email,
-        regNo,
-        department,
-        departmentId,
-        result,
-        attempts: result.filter(r => r !== undefined).length,
-        points: result.reduce((score, ans, i) => 
-          score + (Number(ans) === Number(answers[i]) ? 1 : 0), 0),
-        totalQuestions: queue?.length || 0
-      };
-
-      await postServerData(
-        `${process.env.REACT_APP_SERVER_HOSTNAME}/api/result`,
-        resultData
-      );
-
-      console.log('Result submitted due to tab switching');
-    } catch (error) {
-      console.error('Error submitting result:', error);
-    }
-  };
 
   useEffect(() => {
     if (typeof document.hidden === "undefined") {
@@ -77,17 +43,10 @@ function useTabVisibility() {
             setAlertShown(true);
           } else if (newCount === 2) {
             alert('You have switched tabs twice. The test will now end.');
-            submitResult().then(() => {
-              navigate('/feedback', { 
-                state: { 
-                  fromQuiz: true, 
-                  resultSubmitted: true,
-                  tabSwitchViolation: true 
-                } 
-              });
+            onSubmitTest().then(() => {
+              navigate('/feedback?t=tabswitch');
             });
           }
-
           return newCount;
         });
       }
@@ -111,13 +70,13 @@ function useTabVisibility() {
       audio.src = '';
       console.log('Tab detection cleanup');
     };
-  }, [alertShown, navigate, audio, queue, answers, result]);
+  }, [alertShown, navigate, audio, onSubmitTest]);
 
   return { tabSwitchCount };
 }
 
-const TabDetection = () => {
-  const { tabSwitchCount } = useTabVisibility();
+const TabDetection = ({ onSubmitTest }) => {
+  const { tabSwitchCount } = useTabVisibility({ onSubmitTest });
 
   return (
     <div style={{ display: 'none' }}>

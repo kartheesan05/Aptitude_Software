@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../axios/axios';
+import { useNavigate } from 'react-router-dom';
 import '../styles/AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -12,6 +13,19 @@ export default function AdminDashboard() {
     const [currentCode, setCurrentCode] = useState('');
     const [hasActiveSession, setHasActiveSession] = useState(false);
     const [endTime, setEndTime] = useState(new Date());
+
+    const navigate = useNavigate();
+    useEffect(() => {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+            navigate('/');
+        }
+
+        const role = sessionStorage.getItem('role');
+        if (role !== 'admin') {
+            navigate('/');
+        }
+    }, []);
 
     const convertToIST = (date) => {
         // IST is UTC+5:30
@@ -41,7 +55,7 @@ export default function AdminDashboard() {
 
             // First check if the user has completed the test
             try {
-                const completedResponse = await axios.get('http://localhost:5000/api/users/search', {
+                const completedResponse = await api.get('/api/users/search', {
                     params: { email: email.trim() }
                 });
                 
@@ -58,7 +72,7 @@ export default function AdminDashboard() {
             }
 
             // Then check for active session
-            const sessionResponse = await axios.get('http://localhost:5000/api/users/check-active-session', {
+            const sessionResponse = await api.get('/api/users/check-active-session', {
                 params: { email: email.trim() }
             });
 
@@ -100,7 +114,7 @@ export default function AdminDashboard() {
             setResetLoading(true);
             console.log("Resetting test for email:", userData.email);
 
-            const response = await axios.post('http://localhost:5000/api/users/reset-test', 
+            const response = await api.post('/api/users/reset-test', 
                 { email: userData.email },
                 { 
                     headers: {
@@ -126,7 +140,7 @@ export default function AdminDashboard() {
 
     const getCurrentCode = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/admin/current-code');
+            const response = await api.get('/api/admin/current-code');
             setCurrentCode(response.data.code);
         } catch (error) {
             console.error("Error fetching code:", error);
@@ -140,7 +154,7 @@ export default function AdminDashboard() {
                 return;
             }
 
-            const response = await axios.post('http://localhost:5000/api/admin/update-code', {
+            const response = await api.post('/api/admin/update-code', {
                 code: newCode.trim()
             });
 
@@ -163,7 +177,7 @@ export default function AdminDashboard() {
                 return;
             }
 
-            await axios.post('http://localhost:5000/api/users/admin-clear-session', {
+            await api.post('/api/users/admin-clear-session', {
                 email: userData.email
             });
 
@@ -180,7 +194,7 @@ export default function AdminDashboard() {
 
     const fetchEndTime = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/timer/endtime');
+            const response = await api.get('/api/timer/endtime');
             const serverTime = new Date(response.data.endTime);
             const istTime = convertToIST(serverTime);
             setEndTime(istTime);
@@ -192,7 +206,7 @@ export default function AdminDashboard() {
     const updateEndTime = async () => {
         try {
             const utcTime = convertFromIST(endTime);
-            await axios.post('http://localhost:5000/api/timer/update', {
+            await api.post('/api/timer/update', {
                 endTime: utcTime.toISOString()
             });
             alert('Timer end time updated successfully');

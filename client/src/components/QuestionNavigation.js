@@ -1,40 +1,45 @@
-import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { setTraceAction } from '../redux/question_reducer';
+import React, { useState, useEffect } from 'react';
 import '../styles/QuestionNavigation.css';
 
-export default function QuestionNavigation() {
-    const dispatch = useDispatch();
-    const { trace, queue, categories } = useSelector(state => state.questions);
-    const result = useSelector(state => state.result.result);
+export default function QuestionNavigation({ questions, currentQuestionIndex, onQuestionClick }) {
+    const [answeredQuestions, setAnsweredQuestions] = useState([]);
+
+    useEffect(() => {
+        // Load quiz state from session storage
+        const savedQuizState = sessionStorage.getItem('quizState');
+        if (savedQuizState) {
+            const { results } = JSON.parse(savedQuizState);
+            console.log(results);
+            setAnsweredQuestions(results);
+        }
+    }, [currentQuestionIndex]); // Update when current question changes
 
     // Return null if no questions are loaded
-    if (!queue || !Array.isArray(queue) || queue.length === 0) {
+    if (!questions || !Array.isArray(questions) || questions.length === 0) {
         return null;
     }
 
-    const getCategoryQuestions = (category) => {
-        const { start, end } = categories[category];
-        return queue.slice(start, end + 1);
+    const categories = {
+        aptitude: { start: 0, end: 9 },
+        core: { start: 10, end: 29 },
+        verbal: { start: 30, end: 34 },
+        comprehension: { start: 35, end: 39 },
+        programming: { start: 40, end: 49 }
     };
 
     const getCategoryStatus = (category) => {
         const { start, end } = categories[category];
         const total = end - start + 1;
-        const answered = result
+        const answered = answeredQuestions
             .slice(start, end + 1)
-            .filter(r => r !== undefined)
+            .filter(r => r !== undefined && r !== null)
             .length;
         return { total, answered };
     };
 
-    const navigateToQuestion = (index) => {
-        dispatch(setTraceAction(index));
-    };
-
     const getQuestionStatus = (index) => {
-        if (result[index] !== undefined) return 'answered';
-        if (index === trace) return 'current';
+        if (index === currentQuestionIndex) return 'current';
+        if (answeredQuestions[index] !== undefined && answeredQuestions[index] !== null) return 'answered';
         return 'unanswered';
     };
 
@@ -53,6 +58,11 @@ export default function QuestionNavigation() {
             name: 'Verbal', 
             start: categories.verbal.start, 
             end: categories.verbal.end 
+        },
+        comprehension: {
+            name: 'Comprehension',
+            start: categories.comprehension.start,
+            end: categories.comprehension.end
         },
         programming: { 
             name: 'Programming', 
@@ -80,7 +90,7 @@ export default function QuestionNavigation() {
                                     <button
                                         key={questionIndex}
                                         className={`question-button ${getQuestionStatus(questionIndex)}`}
-                                        onClick={() => navigateToQuestion(questionIndex)}
+                                        onClick={() => onQuestionClick(questionIndex)}
                                     >
                                         {questionIndex + 1}
                                     </button>

@@ -1,8 +1,9 @@
 import express from 'express';
 import TimerSettings from '../models/timerSettings.js';
+import {auth,checkRole} from '../middleware/auth.js';
 const router = express.Router();
 
-router.get('/endtime', async (req, res) => {
+router.get('/endtime', auth, checkRole(['student']), async (req, res) => {
     try {
         const settings = await TimerSettings.findOne({ isActive: true });
         if (!settings) {
@@ -20,7 +21,7 @@ router.get('/endtime', async (req, res) => {
     }
 });
 
-router.post('/update', async (req, res) => {
+router.post('/update', auth, checkRole(['admin']), async (req, res) => {
     try {
         const { endTime } = req.body;
         await TimerSettings.updateOne(

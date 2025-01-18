@@ -1,13 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import '../styles/Instructions.css';
 import DeviceDetection from './DeviceDetection';
-
+import api from '../axios/axios';
 export default function Instructions() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { username } = useSelector(state => state.result);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if(!username) {
@@ -40,14 +41,31 @@ export default function Instructions() {
         };
     }, [navigate]);
 
-    const startQuiz = () => {
+    const startQuiz = async () => {
         if(!username){
             navigate('/');
             return;
         }
-        // Reset trace before starting quiz
-        dispatch({ type: 'SET_TRACE', payload: 0 });
-        navigate('/quiz');
+        
+        try {
+            setIsLoading(true);
+            // Reset trace before starting quiz
+            dispatch({ type: 'SET_TRACE', payload: 0 });
+
+            // Fetch questions from server
+            const response = await api.post('/api/users/create-session');
+            const { questions } = response.data;
+
+            // Store questions in session storage
+            sessionStorage.setItem('quizQuestions', JSON.stringify(questions));
+
+            // Navigate to quiz after storing questions
+            navigate('/quiz');
+        } catch (error) {
+            console.error('Error fetching questions:', error);
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
@@ -68,8 +86,12 @@ export default function Instructions() {
             </div>
 
             <div className='btn-container'>
-                <button onClick={startQuiz} className='btn'>
-                    Start Quiz
+                <button 
+                    onClick={startQuiz} 
+                    className='btn'
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'Loading Questions...' : 'Start Quiz'}
                 </button>
             </div>
         </div>

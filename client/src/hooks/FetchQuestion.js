@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { startExamAction, moveNextAction, movePrevAction } from '../redux/question_reducer'
-import axios from 'axios'
+import api from '../axios/axios'
 
 /** fetch question hook to fetch api data and set value to store */
 export const useFetchQestion = () => {
@@ -19,7 +19,7 @@ export const useFetchQestion = () => {
 
         (async () => {
             try {
-                const { data } = await axios.get(`${process.env.REACT_APP_SERVER_HOSTNAME}/api/questions/${departmentId}`);
+                const { data } = await api.get(`/api/questions/${departmentId}`);
                 
                 if (data && data[0]?.questions) {
                     const { questions, answers } = data[0];

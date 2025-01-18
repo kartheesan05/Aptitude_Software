@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { resetResultAction, setUserDetails } from '../redux/result_reducer';
 import { resetAllAction } from '../redux/question_reducer';
 import '../styles/Login.css';
-import axios from 'axios';
+import api from '../axios/axios';
 import DeviceDetection from './DeviceDetection';
 
 const departments = [
@@ -48,6 +48,10 @@ export default function Login() {
         department: '',
         accessCode: ''
     });
+
+    useEffect(() => {
+        sessionStorage.clear();
+    }, []);
 
     const validateEmail = (email) => {
         return email.endsWith('@svce.ac.in');
@@ -108,10 +112,19 @@ export default function Login() {
             dispatch(resetAllAction());
             dispatch(resetResultAction());
 
-            const sessionResponse = await axios.post('http://localhost:5000/api/users/check-session', {
+            const sessionResponse = await api.post('/api/users/check-session', {
                 email: formData.email,
-                regNo: formData.regNo
+                regNo: formData.regNo,
+                department: formData.department.id,
+                accessCode: formData.accessCode,
+                username: formData.username
             });
+
+            // check for access code error
+            if (sessionResponse.data.message === 'Invalid access code') {
+                setErrors({ accessCode: 'Invalid access code' });
+                return;
+            }
 
             if (sessionResponse.data.hasActiveSession) {
                 setError('This user already has an active test session in another window/browser. Please complete the test in the original session.');
@@ -123,21 +136,22 @@ export default function Login() {
                 return;
             }
 
-            const codeResponse = await axios.post('http://localhost:5000/api/users/verify-code', {
-                accessCode: formData.accessCode
-            });
-
-            if (!codeResponse.data.valid) {
-                setErrors({ accessCode: 'Invalid access code' });
-                return;
-            }
-
-            await axios.post('http://localhost:5000/api/users/create-session', {
-                email: formData.email,
-                regNo: formData.regNo
-            });
-
+            // await api.post('/api/users/create-session', {
+            //     email: formData.email,
+            //     regNo: formData.regNo
+            // });
+            sessionStorage.setItem('token', sessionResponse.data.token);
+            sessionStorage.setItem('role', sessionResponse.data.role);
             dispatch(setUserDetails({
+                username: formData.username,
+                email: formData.email,
+                regNo: formData.regNo,
+                department: formData.department.name,
+                departmentId: formData.department.id
+            }));
+            
+            // Store user data in session storage
+            sessionStorage.setItem('userData', JSON.stringify({
                 username: formData.username,
                 email: formData.email,
                 regNo: formData.regNo,

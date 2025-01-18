@@ -1,4 +1,5 @@
-import { useState, useSelector } from 'react'
+import { useState } from 'react'
+import { useSelector } from 'react-redux'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../axios/axios'
 

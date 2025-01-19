@@ -258,10 +258,8 @@ router.post(
     body("email")
       .exists()
       .withMessage("Email is required")
-      .isEmail()
-      .withMessage("Invalid email format")
-      .matches(/@svce\.ac\.in$/)
-      .withMessage("Please use your college email"),
+      .matches(/^2022[a-zA-Z]{2}\d{4}@svce\.ac\.in$/)
+      .withMessage("Email must be in format 2022XX1234@svce.ac.in"),
     body("regNo")
       .exists()
       .withMessage("Registration number is required")

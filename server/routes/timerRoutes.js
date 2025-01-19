@@ -3,7 +3,7 @@ import TimerSettings from '../models/timerSettings.js';
 import {auth,checkRole} from '../middleware/auth.js';
 const router = express.Router();
 
-router.get('/endtime', auth, checkRole(['student']), async (req, res) => {
+router.get('/endtime', async (req, res) => {
     try {
         const settings = await TimerSettings.findOne({ isActive: true });
         if (!settings) {

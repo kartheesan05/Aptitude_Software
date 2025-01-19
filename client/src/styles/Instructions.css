@@ -107,3 +107,150 @@ body {
         padding: 0.8em 2em;
     }
 }
+
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+
+/* Reset styles */
+.instructions-container,
+.instructions-container * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.instructions-container {
+    min-height: 100vh !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: linear-gradient(135deg, #1eb2a6 0%, #167c73 100%) !important;
+    padding: 20px !important;
+    font-family: 'Poppins', sans-serif;
+}
+
+.instructions-card {
+    background: white !important;
+    border-radius: 20px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+    width: 90% !important;
+    max-width: 700px !important;
+    padding: 40px !important;
+}
+
+.instructions-header {
+    color: #1eb2a6 !important;
+    font-size: 2.2rem !important;
+    margin-bottom: 30px !important;
+    text-align: center !important;
+    font-weight: 600 !important;
+}
+
+.instructions-content {
+    margin: 30px 0 !important;
+}
+
+.instruction-item {
+    display: flex !important;
+    align-items: flex-start !important;
+    margin-bottom: 20px !important;
+    padding: 15px !important;
+    background: #f8f9fa !important;
+    border-radius: 12px !important;
+    transition: transform 0.2s ease !important;
+}
+
+.instruction-number {
+    background: #1eb2a6 !important;
+    color: white !important;
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: bold !important;
+    margin-right: 15px !important;
+}
+
+.instruction-item p {
+    margin: 0 !important;
+    font-size: 1.1rem !important;
+    color: #444 !important;
+    line-height: 1.5 !important;
+    padding-top: 3px !important;
+}
+
+.instructions-action {
+    text-align: center !important;
+    margin-top: 40px !important;
+}
+
+.start-quiz-btn {
+    background: #1eb2a6 !important;
+    color: white !important;
+    border: none !important;
+    padding: 15px 40px !important;
+    font-size: 1.2rem !important;
+    border-radius: 30px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 5px 15px rgba(30, 178, 166, 0.3) !important;
+}
+
+.start-quiz-btn:hover {
+    background: #167c73 !important;
+    transform: translateY(-2px) !important;
+}
+
+.start-quiz-btn:disabled {
+    background: #cccccc !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .instructions-card {
+        padding: 25px !important;
+    }
+
+    .instructions-header {
+        font-size: 1.8rem !important;
+    }
+
+    .instruction-item p {
+        font-size: 1rem !important;
+    }
+
+    .start-quiz-btn {
+        padding: 12px 30px !important;
+        font-size: 1.1rem !important;
+    }
+}
+
+/* For very small screens */
+@media (max-width: 480px) {
+    .instructions-card {
+        padding: 20px;
+    }
+
+    .instructions-header {
+        font-size: 1.5rem;
+    }
+
+    .instruction-item {
+        padding: 12px;
+    }
+
+    .instruction-number {
+        width: 25px;
+        height: 25px;
+        font-size: 0.9rem;
+    }
+
+    .instruction-item p {
+        font-size: 0.9rem;
+    }
+}

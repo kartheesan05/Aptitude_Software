@@ -5,6 +5,13 @@ const DevToolsBlocker = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Handle devtools detection from index.html
+    const handleDevToolsDetected = () => {
+      navigate("/dev-tools-blocked");
+    };
+
+    window.addEventListener("devtoolsDetected", handleDevToolsDetected);
+
     // Disable right-click context menu
     const handleContextMenu = (e) => {
       e.preventDefault();
@@ -47,50 +54,15 @@ const DevToolsBlocker = () => {
       }
     };
 
-    let isDevToolsOpen = false;
-
-    // Detect DevTools using debugger timing
-    const detectDevTools = (allow = 100) => {
-      const start = +new Date();
-      debugger;
-      const end = +new Date();
-
-      if (isNaN(start) || isNaN(end) || end - start > allow) {
-        if (!isDevToolsOpen) {
-          isDevToolsOpen = true;
-          navigate("/dev-tools-blocked");
-        }
-      } else {
-        isDevToolsOpen = false;
-      }
-    };
-
-    // Initialize detection on component mount
-    if (
-      document.readyState === "complete" ||
-      document.readyState === "interactive"
-    ) {
-      detectDevTools();
-    }
-
-    // Add event listeners for various triggers
-    window.addEventListener("resize", () => detectDevTools());
-    window.addEventListener("mousemove", () => detectDevTools());
-    window.addEventListener("focus", () => detectDevTools());
-    window.addEventListener("blur", () => detectDevTools());
-
     // Add keyboard and context menu prevention
     document.addEventListener("contextmenu", handleContextMenu);
     document.addEventListener("keydown", handleKeyDown);
 
     // Cleanup
     return () => {
-      window.removeEventListener("resize", detectDevTools);
-      window.removeEventListener("mousemove", detectDevTools);
-      window.removeEventListener("focus", detectDevTools);
-      window.removeEventListener("blur", detectDevTools);
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("devtoolsDetected", handleDevToolsDetected);
     };
   }, [navigate]);
 

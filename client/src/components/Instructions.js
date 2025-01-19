@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
 import "../styles/Instructions.css";
 import DeviceDetection from "./DeviceDetection";
 import api from "../axios/axios";
@@ -8,18 +8,19 @@ import api from "../axios/axios";
 export default function Instructions() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { username } = useSelector((state) => state.result);
+  const [role, setRole] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const role = sessionStorage.getItem("role");
-    if (!role) {
+    const sessionRole = sessionStorage.getItem("role");
+    if (!sessionRole) {
       navigate("/");
       return;
     }
+    setRole(sessionRole);
     sessionStorage.removeItem("quizState");
-  }, []);
-
+  }, [navigate]);
+  
   useEffect(() => {
     const preventBackNavigation = () => {
       alert(
@@ -37,7 +38,7 @@ export default function Instructions() {
   }, [navigate]);
 
   const startQuiz = async () => {
-    if (!username) {
+    if (role === "student") {
       navigate("/");
       return;
     }
@@ -64,26 +65,53 @@ export default function Instructions() {
   };
 
   return (
-    <div className="container">
+    <div className="instructions-container" style={{ backgroundColor: "red" }}>
       <DeviceDetection />
-      {/* <h1 className='title'>Instructions</h1> */}
 
-      <div className="instructions">
-        <h2>Please read the following instructions carefully:</h2>
-        <ul>
-          <li>The quiz contains multiple choice questions.</li>
-          <li>Each question has only one correct answer.</li>
-          <li>You cannot go back to previous questions once answered.</li>
-          <li>Each correct answer will earn you points.</li>
-          <li>There is no negative marking.</li>
-          <li>Do not refresh the page during the quiz.</li>
-        </ul>
-      </div>
+      <div className="instructions-card">
+        <h2 className="instructions-header">Quiz Instructions</h2>
 
-      <div className="btn-container">
-        <button onClick={startQuiz} className="btn" disabled={isLoading}>
-          {isLoading ? "Loading Questions..." : "Start Quiz"}
-        </button>
+        <div className="instructions-content">
+          <div className="instruction-item">
+            <span className="instruction-number">1</span>
+            <p>The quiz contains multiple choice questions.</p>
+          </div>
+
+          <div className="instruction-item">
+            <span className="instruction-number">2</span>
+            <p>Each question has only one correct answer.</p>
+          </div>
+
+          <div className="instruction-item">
+            <span className="instruction-number">3</span>
+            <p>You cannot go back to previous questions once answered.</p>
+          </div>
+
+          <div className="instruction-item">
+            <span className="instruction-number">4</span>
+            <p>Each correct answer will earn you points.</p>
+          </div>
+
+          <div className="instruction-item">
+            <span className="instruction-number">5</span>
+            <p>There is no negative marking.</p>
+          </div>
+
+          <div className="instruction-item">
+            <span className="instruction-number">6</span>
+            <p>Do not refresh the page during the quiz.</p>
+          </div>
+        </div>
+
+        <div className="instructions-action">
+          <button
+            onClick={startQuiz}
+            className="start-quiz-btn"
+            disabled={isLoading}
+          >
+            {isLoading ? "Loading Questions..." : "Start Quiz"}
+          </button>
+        </div>
       </div>
     </div>
   );

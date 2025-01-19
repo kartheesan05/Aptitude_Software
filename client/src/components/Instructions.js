@@ -20,7 +20,7 @@ export default function Instructions() {
     setRole(sessionRole);
     sessionStorage.removeItem("quizState");
   }, [navigate]);
-  
+
   useEffect(() => {
     const preventBackNavigation = () => {
       alert(
@@ -38,7 +38,7 @@ export default function Instructions() {
   }, [navigate]);
 
   const startQuiz = async () => {
-    if (role === "student") {
+    if (role !== "student") {
       navigate("/");
       return;
     }

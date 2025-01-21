@@ -419,7 +419,7 @@ router.post(
 
       await generatedQuestions.save();
 
-      // Prepare questions data for response
+      // Prepare only aptitude questions data for response
       const questionsData = {
         aptitude: aptitudeQuestions.map((q) => ({
           question: q.question,
@@ -427,61 +427,6 @@ router.post(
             i === q.correctAnswer ? opt + " *" : opt
           ),
           image: q.image || null,
-        })),
-        core: coreQuestions.map((q) => ({
-          question: q.question,
-          options: q.options.map((opt, i) =>
-            i === q.correctAnswer ? opt + " *" : opt
-          ),
-          image: q.image || null,
-        })),
-        verbal: verbalQuestions.map((q) => ({
-          question: q.question,
-          options: q.options.map((opt, i) =>
-            i === q.correctAnswer ? opt + " *" : opt
-          ),
-          image: q.image || null,
-        })),
-        programming: programmingQuestions.map((q) => ({
-          question: q.question,
-          options: q.options.map((opt, i) =>
-            i === q.correctAnswer ? opt + " *" : opt
-          ),
-          image: q.image || null,
-        })),
-        comprehension: comprehensionQuestions.map((q) => ({
-          passage: q.passage,
-          image: q.image || null,
-          q1: {
-            question: q.q1.question,
-            options: q.q1.options.map((opt, i) =>
-              i === q.q1.correctAnswer ? opt + " *" : opt
-            ),
-          },
-          q2: {
-            question: q.q2.question,
-            options: q.q2.options.map((opt, i) =>
-              i === q.q2.correctAnswer ? opt + " *" : opt
-            ),
-          },
-          q3: {
-            question: q.q3.question,
-            options: q.q3.options.map((opt, i) =>
-              i === q.q3.correctAnswer ? opt + " *" : opt
-            ),
-          },
-          q4: {
-            question: q.q4.question,
-            options: q.q4.options.map((opt, i) =>
-              i === q.q4.correctAnswer ? opt + " *" : opt
-            ),
-          },
-          q5: {
-            question: q.q5.question,
-            options: q.q5.options.map((opt, i) =>
-              i === q.q5.correctAnswer ? opt + " *" : opt
-            ),
-          },
         })),
       };
 
@@ -683,5 +628,117 @@ router.get(
     }
   }
 );
+
+// Route to fetch questions for a specific section
+router.get("/fetch-section", auth, checkRole(["student"]), async (req, res) => {
+  try {
+    const { email, regNo } = req.user;
+    const { section } = req.query;
+
+    if (!section) {
+      return res.status(400).json({ message: "Section parameter is required" });
+    }
+
+    // Validate section parameter
+    const validSections = [
+      "aptitude",
+      "core",
+      "verbal",
+      "programming",
+      "comprehension",
+    ];
+    if (!validSections.includes(section)) {
+      return res.status(400).json({
+        message:
+          "Invalid section. Must be one of: aptitude, core, verbal, programming, comprehension",
+      });
+    }
+
+    // Get the generated questions for this user
+    const generatedQuestions = await GeneratedQuestions.findOne({
+      email,
+      regNo,
+    });
+    if (!generatedQuestions) {
+      return res
+        .status(404)
+        .json({ message: "No generated questions found for this user" });
+    }
+
+    // Populate only the requested section
+    const populateField = `${section}Questions`;
+    const populateModel =
+      section === "comprehension"
+        ? "Comprehension"
+        : section === "aptitude"
+        ? "AptitudeQuestion"
+        : section === "core"
+        ? "CoreQuestion"
+        : section === "verbal"
+        ? "VerbalQuestion"
+        : "ProgrammingQuestion";
+
+    await generatedQuestions.populate({
+      path: populateField,
+      model: populateModel,
+    });
+
+    // Format the response based on section type
+    let questions;
+    if (section === "comprehension") {
+      const comprehension = generatedQuestions.comprehensionQuestions[0];
+      questions = {
+        passage: comprehension.passage,
+        image: comprehension.image || null,
+        q1: {
+          question: comprehension.q1.question,
+          options: comprehension.q1.options.map((opt, i) =>
+            i === comprehension.q1.correctAnswer ? opt + " *" : opt
+          ),
+        },
+        q2: {
+          question: comprehension.q2.question,
+          options: comprehension.q2.options.map((opt, i) =>
+            i === comprehension.q2.correctAnswer ? opt + " *" : opt
+          ),
+        },
+        q3: {
+          question: comprehension.q3.question,
+          options: comprehension.q3.options.map((opt, i) =>
+            i === comprehension.q3.correctAnswer ? opt + " *" : opt
+          ),
+        },
+        q4: {
+          question: comprehension.q4.question,
+          options: comprehension.q4.options.map((opt, i) =>
+            i === comprehension.q4.correctAnswer ? opt + " *" : opt
+          ),
+        },
+        q5: {
+          question: comprehension.q5.question,
+          options: comprehension.q5.options.map((opt, i) =>
+            i === comprehension.q5.correctAnswer ? opt + " *" : opt
+          ),
+        },
+      };
+    } else {
+      questions = generatedQuestions[populateField].map((q) => ({
+        question: q.question,
+        options: q.options.map((opt, i) =>
+          i === q.correctAnswer ? opt + " *" : opt
+        ),
+        image: q.image || null,
+      }));
+    }
+
+    res.json({
+      section,
+      questions,
+    });
+  } catch (error) {
+    console.error(`Error fetching ${req.query.section} questions:`, error);
+    res.status(500).json({ message: error.message });
+  }
+});
 
 export { router };

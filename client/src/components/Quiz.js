@@ -19,6 +19,7 @@ export default function Quiz() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [loadingSection, setLoadingSection] = useState(false);
 
   const handleSubmitTest = async (timeUp = false) => {
     try {
@@ -51,7 +52,6 @@ export default function Quiz() {
 
   useEffect(() => {
     // Get user data from session storage if it exists
-
     const testTaken = sessionStorage.getItem("testTaken");
     if (testTaken) {
       navigate("/feedback?t=completed");
@@ -76,50 +76,30 @@ export default function Quiz() {
 
     const parsedQuestions = JSON.parse(storedQuestions);
 
-    // Combine all questions into a single array
-    const allQuestions = [
-      ...parsedQuestions.aptitude.map((q) => ({ ...q, category: "Aptitude" })),
-      ...parsedQuestions.core.map((q) => ({ ...q, category: "Core" })),
-      ...parsedQuestions.verbal.map((q) => ({ ...q, category: "Verbal" })),
-      // Add comprehension questions
-      ...[
-        {
-          question: parsedQuestions.comprehension[0].q1.question,
-          options: parsedQuestions.comprehension[0].q1.options,
-          category: "Comprehension",
-        },
-        {
-          question: parsedQuestions.comprehension[0].q2.question,
-          options: parsedQuestions.comprehension[0].q2.options,
-          category: "Comprehension",
-        },
-        {
-          question: parsedQuestions.comprehension[0].q3.question,
-          options: parsedQuestions.comprehension[0].q3.options,
-          category: "Comprehension",
-        },
-        {
-          question: parsedQuestions.comprehension[0].q4.question,
-          options: parsedQuestions.comprehension[0].q4.options,
-          category: "Comprehension",
-        },
-        {
-          question: parsedQuestions.comprehension[0].q5.question,
-          options: parsedQuestions.comprehension[0].q5.options,
-          category: "Comprehension",
-        },
-      ],
-      ...parsedQuestions.programming.map((q) => ({
-        ...q,
-        category: "Programming",
-      })),
-    ];
+    // Initialize array with placeholders for all 50 questions
+    const allQuestions = Array(50)
+      .fill(null)
+      .map((_, index) => ({
+        question: "Loading...",
+        options: [],
+        category:
+          index < 10
+            ? "Aptitude"
+            : index < 30
+            ? "Core"
+            : index < 35
+            ? "Verbal"
+            : index < 40
+            ? "Comprehension"
+            : "Programming",
+      }));
 
-    // Store the passage separately for comprehension questions
-    sessionStorage.setItem(
-      "comprehensionPassage",
-      parsedQuestions.comprehension[0].passage
-    );
+    // Only fill in aptitude questions initially
+    if (parsedQuestions.aptitude) {
+      parsedQuestions.aptitude.forEach((q, i) => {
+        allQuestions[i] = { ...q, category: "Aptitude" };
+      });
+    }
 
     setQuestions(allQuestions);
 
@@ -129,13 +109,11 @@ export default function Quiz() {
       const { currentIndex, results } = JSON.parse(savedQuizState);
       setCurrentQuestionIndex(currentIndex);
       dispatch({ type: "SET_RESULT", payload: results });
-      // Set the check state for the current question
       setChecked(results[currentIndex]);
     } else {
       const initialResults = Array(allQuestions.length).fill(undefined);
       dispatch({ type: "SET_RESULT", payload: initialResults });
       setChecked(undefined);
-      // Save initial state
       sessionStorage.setItem(
         "quizState",
         JSON.stringify({
@@ -391,6 +369,92 @@ export default function Quiz() {
     return "Programming";
   };
 
+  // Add section change tracking
+  useEffect(() => {
+    const currentSection = getCurrentCategory();
+    const sectionKey = currentSection.toLowerCase();
+
+    // Check if questions for this section exist in sessionStorage
+    const storedQuestions = JSON.parse(
+      sessionStorage.getItem("quizQuestions") || "{}"
+    );
+
+    if (!storedQuestions[sectionKey]) {
+      setLoadingSection(true);
+      // Fetch questions for this section
+      const fetchSectionQuestions = async () => {
+        try {
+          const response = await api.get(
+            `/api/users/fetch-section?section=${sectionKey}`
+          );
+          const newQuestions = response.data.questions;
+
+          // Update sessionStorage with new section questions
+          const updatedQuestions = {
+            ...storedQuestions,
+            [sectionKey]: newQuestions,
+          };
+          sessionStorage.setItem(
+            "quizQuestions",
+            JSON.stringify(updatedQuestions)
+          );
+
+          // Update questions state
+          let updatedAllQuestions = [...questions];
+          if (sectionKey === "comprehension") {
+            // Handle comprehension questions
+            sessionStorage.setItem(
+              "comprehensionPassage",
+              newQuestions.passage
+            );
+            const comprehensionQuestions = [
+              { ...newQuestions.q1, category: "Comprehension" },
+              { ...newQuestions.q2, category: "Comprehension" },
+              { ...newQuestions.q3, category: "Comprehension" },
+              { ...newQuestions.q4, category: "Comprehension" },
+              { ...newQuestions.q5, category: "Comprehension" },
+            ];
+            updatedAllQuestions.splice(35, 5, ...comprehensionQuestions);
+          } else {
+            // Handle other sections
+            const startIndex =
+              sectionKey === "aptitude"
+                ? 0
+                : sectionKey === "core"
+                ? 10
+                : sectionKey === "verbal"
+                ? 30
+                : 40; // programming
+
+            const sectionQuestions = newQuestions.map((q) => ({
+              ...q,
+              category: currentSection,
+            }));
+
+            const count =
+              sectionKey === "aptitude"
+                ? 10
+                : sectionKey === "core"
+                ? 20
+                : sectionKey === "verbal"
+                ? 5
+                : 10; // programming
+
+            updatedAllQuestions.splice(startIndex, count, ...sectionQuestions);
+          }
+
+          setQuestions(updatedAllQuestions);
+          setLoadingSection(false);
+        } catch (error) {
+          console.error(`Error fetching ${currentSection} questions:`, error);
+          setLoadingSection(false);
+        }
+      };
+
+      fetchSectionQuestions();
+    }
+  }, [currentQuestionIndex, questions]);
+
   const getCurrentQuestion = () => {
     if (!questions || !Array.isArray(questions)) return null;
     const currentQuestion = questions[currentQuestionIndex];
@@ -435,7 +499,15 @@ export default function Quiz() {
   const currentQuestion = questions[currentQuestionIndex];
 
   return (
-    <div className="container" style={{ userSelect: "none", WebkitUserSelect: "none", MozUserSelect: "none", msUserSelect: "none" }}>
+    <div
+      className="container"
+      style={{
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MozUserSelect: "none",
+        msUserSelect: "none",
+      }}
+    >
       <DeviceDetection />
       <TabDetection onSubmitTest={handleSubmitTest} />
       <QuestionNavigation
@@ -445,264 +517,278 @@ export default function Quiz() {
       />
       <div className="main-content">
         <h2 className="section-title">{currentQuestion.category} Section</h2>
-        {!isFullscreen && (
-          <div
-            className="fullscreen-notice"
-            style={{
-              backgroundColor: "#17c6e5",
-              color: "#856404",
-              padding: "10px",
-              marginBottom: "15px",
-              borderRadius: "4px",
-              textAlign: "center",
-            }}
-          >
-            <p>
-              You exited fullscreen mode.
-              <button
-                onClick={enterFullscreen}
-                style={{
-                  marginLeft: "10px",
-                  padding: "5px 10px",
-                  border: "none",
-                  borderRadius: "3px",
-                  backgroundColor: "#136b7f",
-                  color: "white",
-                  cursor: "pointer",
-                }}
-              >
-                Return to Fullscreen
-              </button>
-            </p>
-          </div>
-        )}
-
-        <div
-          className="timer"
-          style={{
-            position: "fixed",
-            top: "20px",
-            right: "20px",
-            backgroundColor: timeLeft <= 60 ? "#ff4444" : "#1eb2a6",
-            color: "white",
-            padding: "10px 20px",
-            borderRadius: "5px",
-            fontSize: "1.2em",
-            fontWeight: "bold",
-            boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
-            transition: "background-color 0.3s ease",
-          }}
-        >
-          Time Left: {formatTime(timeLeft)}
-        </div>
-
-        {/* <TabDetection /> */}
-
-        {showConfirmation && (
-          <div
-            className="confirmation-dialog"
-            style={{
-              position: "fixed",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              backgroundColor: "white",
-              padding: "20px",
-              borderRadius: "8px",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-              zIndex: 1000,
-              maxWidth: "90%",
-              width: "400px",
-            }}
-          >
-            <h3
-              style={{
-                marginBottom: "15px",
-                color: "#007bff",
-                fontSize: "18px",
-                fontWeight: "bold",
-              }}
-            >
-              {getUnansweredQuestions().length > 0
-                ? "Unanswered Questions"
-                : "Confirm Submission"}
+        {loadingSection ? (
+          <div className="text-center">
+            <h3 className="text-light">
+              Loading {currentQuestion.category} questions...
             </h3>
-            {getUnansweredQuestions().length > 0 ? (
-              <p
-                style={{
-                  color: "#000",
-                  fontSize: "16px",
-                }}
-              >
-                You have not answered the following questions:
-                <br />
-                <span
-                  style={{
-                    fontWeight: "bold",
-                    display: "block",
-                    marginTop: "10px",
-                    color: "#000",
-                    fontSize: "16px",
-                  }}
-                >
-                  {getUnansweredQuestions().join(", ")}
-                </span>
-              </p>
-            ) : (
-              <p
-                style={{
-                  color: "#000",
-                  fontSize: "16px",
-                }}
-              >
-                Are you sure you want to submit your quiz? You won't be able to
-                change your answers after submission.
-              </p>
-            )}
-            <div
-              style={{
-                marginTop: "20px",
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <button
-                onClick={() => setShowConfirmation(false)}
-                style={{
-                  padding: "8px 16px",
-                  backgroundColor: "#007bff",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseOver={(e) =>
-                  (e.target.style.backgroundColor = "#0056b3")
-                }
-                onMouseOut={(e) => (e.target.style.backgroundColor = "#007bff")}
-              >
-                Continue Answering
-              </button>
-              <button
-                onClick={handleSubmitTest}
-                style={{
-                  padding: "8px 16px",
-                  backgroundColor: "#dc3545",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseOver={(e) =>
-                  (e.target.style.backgroundColor = "#c82333")
-                }
-                onMouseOut={(e) => (e.target.style.backgroundColor = "#dc3545")}
-              >
-                Submit Anyway
-              </button>
-            </div>
           </div>
-        )}
-
-        {currentQuestion && (
-          <div className="questions">
-            {currentQuestionIndex >= 35 && currentQuestionIndex <= 39 && (
+        ) : (
+          <>
+            {!isFullscreen && (
               <div
-                className="comprehension-passage"
+                className="fullscreen-notice"
                 style={{
-                  backgroundColor: "#f8f9fa",
-                  padding: "20px",
-                  marginBottom: "20px",
-                  borderRadius: "8px",
-                  border: "1px solid #dee2e6",
+                  backgroundColor: "#17c6e5",
+                  color: "#856404",
+                  padding: "10px",
+                  marginBottom: "15px",
+                  borderRadius: "4px",
+                  textAlign: "center",
                 }}
               >
-                <h3 style={{ marginBottom: "15px", color: "#1eb2a6" }}>
-                  Reading Comprehension
-                </h3>
-                <p style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
-                  {getComprehensionPassage()}
+                <p>
+                  You exited fullscreen mode.
+                  <button
+                    onClick={enterFullscreen}
+                    style={{
+                      marginLeft: "10px",
+                      padding: "5px 10px",
+                      border: "none",
+                      borderRadius: "3px",
+                      backgroundColor: "#136b7f",
+                      color: "white",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Return to Fullscreen
+                  </button>
                 </p>
               </div>
             )}
-            <h2 className="text-light">
-              {"("}
-              {currentQuestionIndex + 1}
-              {")"} {currentQuestion.question}
-            </h2>
 
-            {currentQuestion.image && (
+            <div
+              className="timer"
+              style={{
+                position: "fixed",
+                top: "20px",
+                right: "20px",
+                backgroundColor: timeLeft <= 60 ? "#ff4444" : "#1eb2a6",
+                color: "white",
+                padding: "10px 20px",
+                borderRadius: "5px",
+                fontSize: "1.2em",
+                fontWeight: "bold",
+                boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+                transition: "background-color 0.3s ease",
+              }}
+            >
+              Time Left: {formatTime(timeLeft)}
+            </div>
+
+            {showConfirmation && (
               <div
-                className="question-image-container"
+                className="confirmation-dialog"
                 style={{
-                  margin: "20px 0",
-                  textAlign: "center",
-                  maxWidth: "100%",
-                  overflow: "hidden",
+                  position: "fixed",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  backgroundColor: "white",
+                  padding: "20px",
                   borderRadius: "8px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+                  zIndex: 1000,
+                  maxWidth: "90%",
+                  width: "400px",
                 }}
               >
-                <img
-                  src={currentQuestion.image}
-                  alt="Question"
+                <h3
                   style={{
-                    maxWidth: "100%",
-                    maxHeight: "400px",
-                    objectFit: "contain",
+                    marginBottom: "15px",
+                    color: "#007bff",
+                    fontSize: "18px",
+                    fontWeight: "bold",
                   }}
-                />
+                >
+                  {getUnansweredQuestions().length > 0
+                    ? "Unanswered Questions"
+                    : "Confirm Submission"}
+                </h3>
+                {getUnansweredQuestions().length > 0 ? (
+                  <p
+                    style={{
+                      color: "#000",
+                      fontSize: "16px",
+                    }}
+                  >
+                    You have not answered the following questions:
+                    <br />
+                    <span
+                      style={{
+                        fontWeight: "bold",
+                        display: "block",
+                        marginTop: "10px",
+                        color: "#000",
+                        fontSize: "16px",
+                      }}
+                    >
+                      {getUnansweredQuestions().join(", ")}
+                    </span>
+                  </p>
+                ) : (
+                  <p
+                    style={{
+                      color: "#000",
+                      fontSize: "16px",
+                    }}
+                  >
+                    Are you sure you want to submit your quiz? You won't be able
+                    to change your answers after submission.
+                  </p>
+                )}
+                <div
+                  style={{
+                    marginTop: "20px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <button
+                    onClick={() => setShowConfirmation(false)}
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor: "#007bff",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      transition: "background-color 0.2s",
+                    }}
+                    onMouseOver={(e) =>
+                      (e.target.style.backgroundColor = "#0056b3")
+                    }
+                    onMouseOut={(e) =>
+                      (e.target.style.backgroundColor = "#007bff")
+                    }
+                  >
+                    Continue Answering
+                  </button>
+                  <button
+                    onClick={handleSubmitTest}
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor: "#dc3545",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      transition: "background-color 0.2s",
+                    }}
+                    onMouseOver={(e) =>
+                      (e.target.style.backgroundColor = "#c82333")
+                    }
+                    onMouseOut={(e) =>
+                      (e.target.style.backgroundColor = "#dc3545")
+                    }
+                  >
+                    Submit Anyway
+                  </button>
+                </div>
               </div>
             )}
 
-            <ul key={`question-${currentQuestionIndex}`}>
-              {currentQuestion.options?.map((q, i) => (
-                <li key={`q${currentQuestionIndex}-${i}`}>
-                  <input
-                    type="radio"
-                    value={i}
-                    name={`question-${currentQuestionIndex}`}
-                    id={`q${currentQuestionIndex}-${i}`}
-                    onChange={() => onSelect(i)}
-                    checked={check === i}
-                  />
-                  <label
-                    className="text-primary"
-                    htmlFor={`q${currentQuestionIndex}-${i}`}
-                  >
-                    {q}
-                  </label>
+            {currentQuestion && (
+              <div className="questions">
+                {currentQuestionIndex >= 35 && currentQuestionIndex <= 39 && (
                   <div
-                    className={`check ${check === i ? "checked" : ""}`}
-                  ></div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+                    className="comprehension-passage"
+                    style={{
+                      backgroundColor: "#f8f9fa",
+                      padding: "20px",
+                      marginBottom: "20px",
+                      borderRadius: "8px",
+                      border: "1px solid #dee2e6",
+                    }}
+                  >
+                    <h3 style={{ marginBottom: "15px", color: "#1eb2a6" }}>
+                      Reading Comprehension
+                    </h3>
+                    <p style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
+                      {getComprehensionPassage()}
+                    </p>
+                  </div>
+                )}
+                <h2 className="text-light">
+                  {"("}
+                  {currentQuestionIndex + 1}
+                  {")"} {currentQuestion.question}
+                </h2>
 
-        <div className="grid">
-          {currentQuestionIndex > 0 ? (
-            <button
-              className="btn prev"
-              onClick={onPrev}
-              style={{ width: "100px" }}
-            >
-              Prev
-            </button>
-          ) : (
-            <div></div>
-          )}
-          <button
-            className="btn next"
-            onClick={onNext}
-            style={{ width: "100px" }}
-          >
-            {currentQuestionIndex === questions?.length - 1 ? "Finish" : "Next"}
-          </button>
-        </div>
+                {currentQuestion.image && (
+                  <div
+                    className="question-image-container"
+                    style={{
+                      margin: "20px 0",
+                      textAlign: "center",
+                      maxWidth: "100%",
+                      overflow: "hidden",
+                      borderRadius: "8px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    }}
+                  >
+                    <img
+                      src={currentQuestion.image}
+                      alt="Question"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "400px",
+                        objectFit: "contain",
+                      }}
+                    />
+                  </div>
+                )}
+
+                <ul key={`question-${currentQuestionIndex}`}>
+                  {currentQuestion.options?.map((q, i) => (
+                    <li key={`q${currentQuestionIndex}-${i}`}>
+                      <input
+                        type="radio"
+                        value={i}
+                        name={`question-${currentQuestionIndex}`}
+                        id={`q${currentQuestionIndex}-${i}`}
+                        onChange={() => onSelect(i)}
+                        checked={check === i}
+                      />
+                      <label
+                        className="text-primary"
+                        htmlFor={`q${currentQuestionIndex}-${i}`}
+                      >
+                        {q}
+                      </label>
+                      <div
+                        className={`check ${check === i ? "checked" : ""}`}
+                      ></div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="grid">
+              {currentQuestionIndex > 0 ? (
+                <button
+                  className="btn prev"
+                  onClick={onPrev}
+                  style={{ width: "100px" }}
+                >
+                  Prev
+                </button>
+              ) : (
+                <div></div>
+              )}
+              <button
+                className="btn next"
+                onClick={onNext}
+                style={{ width: "100px" }}
+              >
+                {currentQuestionIndex === questions?.length - 1
+                  ? "Finish"
+                  : "Next"}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -66,6 +66,7 @@ router.get("/search", async (req, res) => {
         department: completedUser.dept,
         score: completedUser.points ? `${completedUser.points}` : "0",
         totalQuestions: completedUser.totalQuestions || 50,
+        sectionScores: completedUser.sectionScores || {},
       };
     }
 
@@ -469,8 +470,15 @@ router.post("/submit-test", auth, checkRole(["student"]), async (req, res) => {
 
     let totalPoints = 0;
     let resultArray = [];
+    let sectionScores = {
+      aptitude: { score: 0, total: 0, correct: 0 },
+      core: { score: 0, total: 0, correct: 0 },
+      verbal: { score: 0, total: 0, correct: 0 },
+      programming: { score: 0, total: 0, correct: 0 },
+      comprehension: { score: 0, total: 5, correct: 0 },
+    };
 
-    // Calculate points for each question type
+    // Process regular questions (aptitude, core, verbal, programming)
     const questionTypes = [
       {
         key: "aptitude",
@@ -494,18 +502,27 @@ router.post("/submit-test", auth, checkRole(["student"]), async (req, res) => {
     for (const type of questionTypes) {
       const userAnswers = answers[type.key] || [];
       let sectionPoints = 0;
+      let correctAnswers = 0;
 
       type.questions.forEach((question, index) => {
         const isCorrect = userAnswers[index] === question.correctAnswer;
         const pointsEarned = isCorrect ? type.points : 0;
+        if (isCorrect) correctAnswers++;
         sectionPoints += pointsEarned;
         resultArray.push({
+          section: type.key,
           question: question.question,
           submitted: userAnswers[index],
           correct: question.correctAnswer,
           points: pointsEarned,
         });
       });
+
+      sectionScores[type.key] = {
+        score: sectionPoints,
+        total: type.questions.length,
+        correct: correctAnswers,
+      };
       totalPoints += sectionPoints;
     }
 
@@ -513,19 +530,28 @@ router.post("/submit-test", auth, checkRole(["student"]), async (req, res) => {
     const comprehension = generatedQuestions.comprehensionQuestions[0];
     const comprehensionAnswers = answers.comprehension || [];
     let comprehensionPoints = 0;
+    let comprehensionCorrect = 0;
 
     ["q1", "q2", "q3", "q4", "q5"].forEach((q, index) => {
       const isCorrect =
         comprehensionAnswers[index] === comprehension[q].correctAnswer;
       const pointsEarned = isCorrect ? 1 : 0;
+      if (isCorrect) comprehensionCorrect++;
       comprehensionPoints += pointsEarned;
       resultArray.push({
+        section: "comprehension",
         question: comprehension[q].question,
         submitted: comprehensionAnswers[index],
         correct: comprehension[q].correctAnswer,
         points: pointsEarned,
       });
     });
+
+    sectionScores.comprehension = {
+      score: comprehensionPoints,
+      total: 5,
+      correct: comprehensionCorrect,
+    };
     totalPoints += comprehensionPoints;
 
     // Calculate total questions
@@ -541,6 +567,7 @@ router.post("/submit-test", auth, checkRole(["student"]), async (req, res) => {
       attempts: 1,
       totalQuestions,
       result: resultArray,
+      sectionScores: sectionScores,
     });
 
     await result.save();

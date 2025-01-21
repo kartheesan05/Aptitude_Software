@@ -1,8 +1,10 @@
 .results-table-container {
     margin: 20px;
     overflow-x: auto;
-    max-height: 70vh; /* Set maximum height to 70% of viewport height */
-    overflow-y: auto; /* Enable vertical scrolling */
+    max-height: 70vh;
+    /* Set maximum height to 70% of viewport height */
+    overflow-y: auto;
+    /* Enable vertical scrolling */
 }
 
 .results-table {
@@ -23,7 +25,8 @@
     cursor: pointer;
     user-select: none;
     position: sticky;
-    top: 50px; /* Adjust based on your search bar height */
+    top: 50px;
+    /* Adjust based on your search bar height */
     background-color: #f4f4f4;
     z-index: 1;
 }

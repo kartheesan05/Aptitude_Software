@@ -331,46 +331,50 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <div className="container">
-      <h1 className="title text-light">Admin Dashboard</h1>
+    <div className="admin-container">
+      <h1 className="admin-title text-light">Admin Dashboard</h1>
 
-      <div className="search-section">
+      <div className="admin-search-section">
         <input
           type="text"
           placeholder="Enter Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="search-input"
+          className="admin-search-input"
         />
 
-        <button onClick={searchUser} className="search-btn" disabled={loading}>
+        <button
+          onClick={searchUser}
+          className="admin-search-btn"
+          disabled={loading}
+        >
           {loading ? "Searching..." : "Search"}
         </button>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && <div className="admin-error-message">{error}</div>}
 
       {userData && (
-        <div className="user-details">
+        <div className="admin-user-details">
           <h2>User Details</h2>
-          <div className="details-grid">
-            <div className="detail-item">
+          <div className="admin-details-grid">
+            <div className="admin-detail-item">
               <strong>Email:</strong>
               <span>{userData.email}</span>
             </div>
-            <div className="detail-item">
+            <div className="admin-detail-item">
               <strong>Registration Number:</strong>
               <span>{userData.regNo}</span>
             </div>
             {userData.department && (
-              <div className="detail-item">
+              <div className="admin-detail-item">
                 <strong>Department:</strong>
                 <span>{userData.department}</span>
               </div>
             )}
-            <div className="detail-item">
+            <div className="admin-detail-item">
               <strong>Status:</strong>
-              <span className={`status-${userData.status}`}>
+              <span className={`admin-status-${userData.status}`}>
                 {userData.status === "in_progress"
                   ? "Test In Progress"
                   : userData.status}
@@ -378,18 +382,50 @@ export default function AdminDashboard() {
             </div>
             {userData.status === "completed" && (
               <>
-                <div className="detail-item">
-                  <strong>Score:</strong>
+                <div className="admin-detail-item">
+                  <strong>Total Score:</strong>
                   <span>{userData.score}</span>
                 </div>
-                <div className="detail-item">
+                <div className="admin-detail-item">
                   <strong>Total Questions:</strong>
                   <span>{userData.totalQuestions}</span>
                 </div>
+                {userData.sectionScores && (
+                  <div className="admin-section-scores">
+                    <h3>Section-wise Scores</h3>
+                    <div className="admin-section-scores-grid">
+                      {Object.entries(userData.sectionScores).map(
+                        ([section, scores]) => (
+                          <div
+                            key={section}
+                            className="admin-section-score-item"
+                          >
+                            <div className="admin-section-score-header">
+                              {section.charAt(0).toUpperCase() +
+                                section.slice(1)}
+                            </div>
+                            <div className="admin-section-score-details">
+                              <div>
+                                Score: {scores.score}/{scores.total}
+                              </div>
+                              <div>Correct: {scores.correct}</div>
+                              <div className="admin-section-score-percentage">
+                                {((scores.score / scores.total) * 100).toFixed(
+                                  1
+                                )}
+                                %
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
               </>
             )}
             {userData.status === "in_progress" && (
-              <div className="detail-item">
+              <div className="admin-detail-item">
                 <strong>Started At:</strong>
                 <span>{new Date(userData.startTime).toLocaleString()}</span>
               </div>
@@ -397,29 +433,11 @@ export default function AdminDashboard() {
           </div>
 
           {userData.status === "in_progress" && (
-            <div
-              className="warning-message"
-              style={{
-                backgroundColor: "#fff3cd",
-                color: "#856404",
-                padding: "10px",
-                marginTop: "10px",
-                borderRadius: "4px",
-              }}
-            >
+            <div className="admin-warning-message">
               <p>This user has an active test session.</p>
               <button
                 onClick={clearActiveSession}
-                className="warning-btn"
-                style={{
-                  backgroundColor: "#856404",
-                  color: "white",
-                  border: "none",
-                  padding: "5px 10px",
-                  borderRadius: "3px",
-                  marginTop: "5px",
-                  cursor: "pointer",
-                }}
+                className="admin-warning-btn"
               >
                 Clear Active Session
               </button>
@@ -427,10 +445,10 @@ export default function AdminDashboard() {
           )}
 
           {userData.status === "completed" && (
-            <div className="action-buttons">
+            <div className="admin-action-buttons">
               <button
                 onClick={resetTest}
-                className="reset-btn"
+                className="admin-reset-btn"
                 disabled={resetLoading}
               >
                 {resetLoading ? "Resetting..." : "Reset Test"}
@@ -440,28 +458,28 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="access-code-section">
+      <div className="admin-access-code-section">
         <h2>Access Code Management</h2>
-        <div className="current-code">
+        <div className="admin-current-code">
           Current Access Code: <strong>{currentCode}</strong>
         </div>
-        <div className="code-update-form">
+        <div className="admin-code-update-form">
           <input
             type="text"
             value={newCode}
             onChange={(e) => setNewCode(e.target.value)}
             placeholder="Enter new access code"
-            className="search-input"
+            className="admin-search-input"
           />
-          <button onClick={updateAccessCode} className="search-btn">
+          <button onClick={updateAccessCode} className="admin-search-btn">
             Update Access Code
           </button>
         </div>
       </div>
 
-      <div className="timer-settings-section">
+      <div className="admin-timer-settings-section">
         <h2>Timer Settings</h2>
-        <div className="timer-update-form">
+        <div className="admin-timer-update-form">
           <input
             type="datetime-local"
             value={formatDateTimeLocal(endTime)}
@@ -469,33 +487,22 @@ export default function AdminDashboard() {
               const selectedDate = new Date(e.target.value);
               setEndTime(selectedDate);
             }}
-            className="search-input"
+            className="admin-search-input"
           />
-          {/* <div style={{ marginTop: '10px', fontSize:'0.9em', color: '#666' }}>
-                        Selected End Time (IST): {endTime.toLocaleString('en-IN', { 
-                            timeZone: 'Asia/Kolkata',
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                        })}
-                    </div> */}
-          <button onClick={updateEndTime} className="search-btn">
+          <button onClick={updateEndTime} className="admin-search-btn">
             Update End Time
           </button>
         </div>
       </div>
 
-      <div className="departments-section">
+      <div className="admin-departments-section">
         <h2>Department Management</h2>
-        <p className="department-info">
+        <p className="admin-department-info">
           Select the departments that should be available in the login page:
         </p>
-        <div className="departments-grid">
+        <div className="admin-departments-grid">
           {availableDepartments.map((dept) => (
-            <div key={dept.id} className="department-item">
+            <div key={dept.id} className="admin-department-item">
               <label>
                 <input
                   type="checkbox"
@@ -515,14 +522,14 @@ export default function AdminDashboard() {
             </div>
           ))}
         </div>
-        <button onClick={updateDepartments} className="search-btn">
+        <button onClick={updateDepartments} className="admin-search-btn">
           Update Departments
         </button>
       </div>
 
-      <div className="results-section">
+      <div className="admin-results-section">
         <button
-          className="view-results-btn"
+          className="admin-view-results-btn"
           onClick={() => navigate("/results")}
         >
           View All Results

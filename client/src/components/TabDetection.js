@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import beepSound from "../assets/beep.js";
 
 function useTabVisibility({ onSubmitTest }) {
-  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [tabSwitchCount, setTabSwitchCount] = useState(() => {
+    const savedCount = parseInt(sessionStorage.getItem("tabSwitchCount")) || 0;
+    // If they already have 2 or more switches, submit immediately
+    if (savedCount >= 2) {
+      setTimeout(() => {
+        onSubmitTest().then(() => {
+          navigate("/feedback?t=tabswitch");
+        });
+      }, 0);
+    }
+    return savedCount;
+  });
   const [alertShown, setAlertShown] = useState(false);
   const [audio] = useState(new Audio(beepSound));
   const [lastSwitchTime, setLastSwitchTime] = useState(0);
@@ -44,6 +54,7 @@ function useTabVisibility({ onSubmitTest }) {
       setTabSwitchCount((prevCount) => {
         const newCount = prevCount + 1;
         console.log("Switch count:", newCount);
+        sessionStorage.setItem("tabSwitchCount", newCount.toString());
 
         playBeep();
 

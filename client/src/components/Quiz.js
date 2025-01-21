@@ -509,7 +509,7 @@ export default function Quiz() {
       }}
     >
       <DeviceDetection />
-      <TabDetection onSubmitTest={handleSubmitTest} />
+      {/* <TabDetection onSubmitTest={handleSubmitTest} /> */}
       <QuestionNavigation
         questions={questions}
         currentQuestionIndex={currentQuestionIndex}

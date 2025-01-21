@@ -14,6 +14,7 @@ import AdminDashboard from "./AdminDashboard";
 import { CheckUserExist } from "../helper/helper";
 import QuestionUpload from "./QuestionUpload";
 import Success from "./Success";
+import ResultsPage from "./ResultsPage";
 
 // Layout component that includes DevToolsBlocker
 const Layout = () => {
@@ -81,6 +82,10 @@ const router = createBrowserRouter([
       {
         path: "/dev-tools-blocked",
         element: <DevToolsBlocked />,
+      },
+      {
+        path: "/results",
+        element: <ResultsPage />,
       },
     ],
   },

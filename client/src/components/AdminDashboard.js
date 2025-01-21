@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import api from "../axios/axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/AdminDashboard.css";
+import ResultsTable from "./ResultsTable";
+import { departments } from "../components/Login"; // You'll need to export the array from Login.js
 
 export default function AdminDashboard() {
   const [email, setEmail] = useState("");
@@ -13,8 +15,13 @@ export default function AdminDashboard() {
   const [currentCode, setCurrentCode] = useState("");
   const [hasActiveSession, setHasActiveSession] = useState(false);
   const [endTime, setEndTime] = useState(new Date());
+  const [showResults, setShowResults] = useState(false);
+  const [results, setResults] = useState([]);
+  const [availableDepartments, setAvailableDepartments] = useState([]);
 
   const navigate = useNavigate();
+  const location = useLocation();
+
   useEffect(() => {
     const token = sessionStorage.getItem("token");
     if (!token) {
@@ -26,6 +33,17 @@ export default function AdminDashboard() {
       navigate("/");
     }
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const emailParam = params.get("email");
+    if (emailParam) {
+      setEmail(emailParam);
+      setTimeout(() => {
+        searchUser();
+      }, 100);
+    }
+  }, [location.search]);
 
   const convertToIST = (date) => {
     // IST is UTC+5:30
@@ -242,9 +260,74 @@ export default function AdminDashboard() {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
+  const fetchResults = async () => {
+    try {
+      const response = await api.get("/api/admin/completed-tests");
+      setResults(response.data);
+    } catch (error) {
+      console.error("Error fetching results:", error);
+    }
+  };
+
+  const updateDepartments = async () => {
+    try {
+      console.log("Sending departments to server:", availableDepartments);
+      await api.post(
+        "/api/admin/departments/update",
+        {
+          departments: availableDepartments,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          },
+        }
+      );
+      alert("Departments updated successfully");
+    } catch (error) {
+      console.error("Error updating departments:", error);
+      alert("Error updating departments");
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await api.get("/api/admin/departments", {
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+        },
+      });
+      if (response.data.length > 0) {
+        setAvailableDepartments(
+          departments.map((dept) => ({
+            ...dept,
+            isActive:
+              response.data.find((d) => d.id === dept.id)?.isActive ?? true,
+          }))
+        );
+      } else {
+        setAvailableDepartments(
+          departments.map((dept) => ({
+            ...dept,
+            isActive: true,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      setAvailableDepartments(
+        departments.map((dept) => ({
+          ...dept,
+          isActive: true,
+        }))
+      );
+    }
+  };
+
   useEffect(() => {
     fetchEndTime();
     getCurrentCode();
+    fetchDepartments();
   }, []);
 
   return (
@@ -403,6 +486,47 @@ export default function AdminDashboard() {
             Update End Time
           </button>
         </div>
+      </div>
+
+      <div className="departments-section">
+        <h2>Department Management</h2>
+        <p className="department-info">
+          Select the departments that should be available in the login page:
+        </p>
+        <div className="departments-grid">
+          {availableDepartments.map((dept) => (
+            <div key={dept.id} className="department-item">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={dept.isActive}
+                  onChange={(e) => {
+                    setAvailableDepartments((prev) =>
+                      prev.map((d) =>
+                        d.id === dept.id
+                          ? { ...d, isActive: e.target.checked }
+                          : d
+                      )
+                    );
+                  }}
+                />
+                <span>{dept.name}</span>
+              </label>
+            </div>
+          ))}
+        </div>
+        <button onClick={updateDepartments} className="search-btn">
+          Update Departments
+        </button>
+      </div>
+
+      <div className="results-section">
+        <button
+          className="view-results-btn"
+          onClick={() => navigate("/results")}
+        >
+          View All Results
+        </button>
       </div>
     </div>
   );

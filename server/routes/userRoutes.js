@@ -13,6 +13,7 @@ import {
 import GeneratedQuestions from "../models/generatedQuestionsSchema.js";
 import Comprehension from "../models/comprehensionSchema.js";
 import { body, validationResult } from "express-validator";
+import Department from "../models/departmentSchema.js";
 const router = express.Router();
 
 // Search user by email only
@@ -738,6 +739,16 @@ router.get("/fetch-section", auth, checkRole(["student"]), async (req, res) => {
   } catch (error) {
     console.error(`Error fetching ${req.query.section} questions:`, error);
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Add this new route for public access to active departments
+router.get("/departments/active", async (req, res) => {
+  try {
+    const departments = await Department.find({ isActive: true });
+    res.json(departments);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
 });
 

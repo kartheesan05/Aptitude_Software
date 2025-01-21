@@ -7,7 +7,7 @@ import "../styles/Login.css";
 import api from "../axios/axios";
 import DeviceDetection from "./DeviceDetection";
 
-const departments = [
+export const departments = [
   // { id: 'cs', name: 'Computer Science and Engineering', coreCategory: 'cs' },
   // { id: 'it', name: 'Information Technology', coreCategory: 'it' },
   // { id: 'ec', name: 'Electronics and Communication Engineering', coreCategory: 'ec' },
@@ -56,6 +56,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
   const [isTestTimeValid, setIsTestTimeValid] = useState(true);
+  const [availableDepartments, setAvailableDepartments] = useState([]);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -68,6 +69,7 @@ export default function Login() {
   useEffect(() => {
     sessionStorage.clear();
     checkTestTime();
+    fetchActiveDepartments();
   }, []);
 
   const checkTestTime = async () => {
@@ -100,6 +102,23 @@ export default function Login() {
       }
       setIsTestTimeValid(true);
       return true;
+    }
+  };
+
+  const fetchActiveDepartments = async () => {
+    try {
+      const response = await api.get("/api/users/departments/active");
+      console.log("Received departments from server:", response.data);
+      if (response.data.length > 0) {
+        setAvailableDepartments(response.data);
+        setFormData((prev) => ({
+          ...prev,
+          department: "",
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      setAvailableDepartments([]);
     }
   };
 
@@ -321,11 +340,18 @@ export default function Login() {
             <option value="" disabled>
               Select Department
             </option>
-            {departments.map((dept) => (
-              <option key={dept.id} value={dept.id}>
-                {dept.name}
-              </option>
-            ))}
+            {departments
+              .filter((dept) => {
+                const activeDept = availableDepartments.find(
+                  (d) => d.id === dept.id
+                );
+                return activeDept?.isActive === true;
+              })
+              .map((dept) => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </option>
+              ))}
           </select>
           {errors.department && (
             <div className="error">{errors.department}</div>

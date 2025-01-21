@@ -7,6 +7,7 @@ function useTabVisibility({ onSubmitTest }) {
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const [alertShown, setAlertShown] = useState(false);
   const [audio] = useState(new Audio(beepSound));
+  const [lastSwitchTime, setLastSwitchTime] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,7 +31,16 @@ function useTabVisibility({ onSubmitTest }) {
     };
 
     const handleSwitch = async () => {
+      const currentTime = Date.now();
+      // Ignore switches that happen within 1 second of each other
+      if (currentTime - lastSwitchTime < 1000) {
+        console.log("Ignoring switch - too soon after last switch");
+        return;
+      }
+
       console.log("Tab/Window switched away!");
+      setLastSwitchTime(currentTime);
+
       setTabSwitchCount((prevCount) => {
         const newCount = prevCount + 1;
         console.log("Switch count:", newCount);
@@ -52,16 +62,28 @@ function useTabVisibility({ onSubmitTest }) {
       });
     };
 
+    let switchTimeout;
     // Handle tab visibility changes
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
-        handleSwitch();
+        // Clear any existing timeout
+        if (switchTimeout) {
+          clearTimeout(switchTimeout);
+        }
+        // Set a new timeout
+        switchTimeout = setTimeout(handleSwitch, 100);
       }
     };
 
     // Handle window focus changes
     const handleWindowBlur = () => {
-      handleSwitch();
+      // Only handle blur if document is not hidden (to avoid double counting with visibility change)
+      if (document.visibilityState !== "hidden") {
+        if (switchTimeout) {
+          clearTimeout(switchTimeout);
+        }
+        switchTimeout = setTimeout(handleSwitch, 100);
+      }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -80,6 +102,9 @@ function useTabVisibility({ onSubmitTest }) {
     document.addEventListener("click", initAudio);
 
     return () => {
+      if (switchTimeout) {
+        clearTimeout(switchTimeout);
+      }
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleWindowBlur);
       document.removeEventListener("click", initAudio);
@@ -87,7 +112,7 @@ function useTabVisibility({ onSubmitTest }) {
       audio.src = "";
       console.log("Tab and window detection cleanup");
     };
-  }, [alertShown, navigate, audio, onSubmitTest]);
+  }, [alertShown, navigate, audio, onSubmitTest, lastSwitchTime]);
 
   return { tabSwitchCount };
 }

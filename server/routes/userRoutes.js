@@ -314,6 +314,15 @@ router.post(
 
       const { email, regNo, department, accessCode, username } = req.body;
 
+      const activeDepartment = await Department.findOne({
+        department,
+        isActive: true,
+      });
+
+      if (!activeDepartment) {
+        return res.status(400).json({ message: "Department is not active" });
+      }
+
       // Verify access code
       const validCode = await AccessCode.findOne({
         code: accessCode,
@@ -375,6 +384,15 @@ router.post(
   async (req, res) => {
     try {
       const { email, regNo, department } = req.user;
+
+      const activeDepartment = await Department.findOne({
+        department,
+        isActive: true,
+      });
+
+      if (!activeDepartment) {
+        return res.status(400).json({ message: "Department is not active" });
+      }
 
       const newSession = new ActiveSession({
         email,

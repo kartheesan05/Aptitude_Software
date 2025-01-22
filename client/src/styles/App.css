@@ -34,6 +34,7 @@ body, html {
   margin-left: 250px;
   padding: 20px;
   background: #fff;
+  min-height: 100vh;
 }
 
 .section-title {

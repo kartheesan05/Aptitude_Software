@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { updateResult } from "../redux/result_reducer";
@@ -58,6 +58,12 @@ export default function Quiz() {
       return;
     }
 
+    const token = sessionStorage.getItem("token");
+    if (!token) {
+      navigate("/");
+      return;
+    }
+
     const storedUserData = sessionStorage.getItem("userData");
     if (storedUserData) {
       const userData = JSON.parse(storedUserData);
@@ -94,11 +100,49 @@ export default function Quiz() {
             : "Programming",
       }));
 
-    // Only fill in aptitude questions initially
-    if (parsedQuestions.aptitude) {
-      parsedQuestions.aptitude.forEach((q, i) => {
-        allQuestions[i] = { ...q, category: "Aptitude" };
-      });
+    // Fill in questions from all available sections
+    if (parsedQuestions) {
+      // Aptitude section (0-9)
+      if (parsedQuestions.aptitude) {
+        parsedQuestions.aptitude.forEach((q, i) => {
+          allQuestions[i] = { ...q, category: "Aptitude" };
+        });
+      }
+
+      // Core section (10-29)
+      if (parsedQuestions.core) {
+        parsedQuestions.core.forEach((q, i) => {
+          allQuestions[i + 10] = { ...q, category: "Core" };
+        });
+      }
+
+      // Verbal section (30-34)
+      if (parsedQuestions.verbal) {
+        parsedQuestions.verbal.forEach((q, i) => {
+          allQuestions[i + 30] = { ...q, category: "Verbal" };
+        });
+      }
+
+      // Comprehension section (35-39)
+      if (parsedQuestions.comprehension) {
+        const comprehensionQuestions = [
+          { ...parsedQuestions.comprehension.q1, category: "Comprehension" },
+          { ...parsedQuestions.comprehension.q2, category: "Comprehension" },
+          { ...parsedQuestions.comprehension.q3, category: "Comprehension" },
+          { ...parsedQuestions.comprehension.q4, category: "Comprehension" },
+          { ...parsedQuestions.comprehension.q5, category: "Comprehension" },
+        ];
+        comprehensionQuestions.forEach((q, i) => {
+          allQuestions[i + 35] = q;
+        });
+      }
+
+      // Programming section (40-49)
+      if (parsedQuestions.programming) {
+        parsedQuestions.programming.forEach((q, i) => {
+          allQuestions[i + 40] = { ...q, category: "Programming" };
+        });
+      }
     }
 
     setQuestions(allQuestions);
@@ -193,13 +237,13 @@ export default function Quiz() {
     if (questions && questions.length > 0) {
       dispatch({ type: "SET_TRACE", payload: 0 });
     }
-  }, [questions]);
+  }, [questions, dispatch]);
 
   useEffect(() => {
     console.log("Current trace:", currentQuestionIndex);
     console.log("Current result:", result);
     setChecked(result[currentQuestionIndex]);
-  }, [currentQuestionIndex]);
+  }, [currentQuestionIndex, result]);
 
   function onNext() {
     if (currentQuestionIndex < questions?.length) {
@@ -361,13 +405,13 @@ export default function Quiz() {
     return categorizedQuestions.programming;
   };
 
-  const getCurrentCategory = () => {
+  const getCurrentCategory = useCallback(() => {
     if (currentQuestionIndex < 10) return "Aptitude";
     if (currentQuestionIndex < 30) return "Core";
     if (currentQuestionIndex < 35) return "Verbal";
     if (currentQuestionIndex < 40) return "Comprehension";
     return "Programming";
-  };
+  }, [currentQuestionIndex]);
 
   // Add section change tracking
   useEffect(() => {
@@ -379,7 +423,12 @@ export default function Quiz() {
       sessionStorage.getItem("quizQuestions") || "{}"
     );
 
-    if (!storedQuestions[sectionKey]) {
+    console.log("storedQuestions[sectionKey]", storedQuestions[sectionKey]);
+
+    if (
+      !storedQuestions[sectionKey] ||
+      storedQuestions[sectionKey].length === 0
+    ) {
       setLoadingSection(true);
       // Fetch questions for this section
       const fetchSectionQuestions = async () => {
@@ -397,6 +446,10 @@ export default function Quiz() {
           sessionStorage.setItem(
             "quizQuestions",
             JSON.stringify(updatedQuestions)
+          );
+          console.log(
+            "updatedQuestions",
+            sessionStorage.getItem("quizQuestions")
           );
 
           // Update questions state
@@ -453,18 +506,7 @@ export default function Quiz() {
 
       fetchSectionQuestions();
     }
-  }, [currentQuestionIndex, questions]);
-
-  const getCurrentQuestion = () => {
-    if (!questions || !Array.isArray(questions)) return null;
-    const currentQuestion = questions[currentQuestionIndex];
-    if (!currentQuestion) return null;
-
-    return {
-      ...currentQuestion,
-      categoryName: getCurrentCategory(),
-    };
-  };
+  }, [currentQuestionIndex, questions, getCurrentCategory]);
 
   useEffect(() => {
     const checkDevice = () => {
@@ -487,7 +529,7 @@ export default function Quiz() {
     checkDevice();
     window.addEventListener("resize", checkDevice);
     return () => window.removeEventListener("resize", checkDevice);
-  }, []);
+  }, [navigate]);
 
   // Add function to get comprehension passage
   const getComprehensionPassage = () => {
@@ -508,7 +550,7 @@ export default function Quiz() {
         msUserSelect: "none",
       }}
     >
-      <DeviceDetection />
+      {/* <DeviceDetection /> */}
       {/* <TabDetection onSubmitTest={handleSubmitTest} /> */}
       <QuestionNavigation
         questions={questions}
@@ -742,23 +784,32 @@ export default function Quiz() {
                 <ul key={`question-${currentQuestionIndex}`}>
                   {currentQuestion.options?.map((q, i) => (
                     <li key={`q${currentQuestionIndex}-${i}`}>
-                      <input
-                        type="radio"
-                        value={i}
-                        name={`question-${currentQuestionIndex}`}
-                        id={`q${currentQuestionIndex}-${i}`}
-                        onChange={() => onSelect(i)}
-                        checked={check === i}
-                      />
                       <label
                         className="text-primary"
-                        htmlFor={`q${currentQuestionIndex}-${i}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "flex-start",
+                          cursor: "pointer",
+                          width: "100%",
+                          minHeight: "40px",
+                          padding: "8px 12px",
+                        }}
                       >
-                        {q}
+                        <input
+                          type="radio"
+                          value={i}
+                          name={`question-${currentQuestionIndex}`}
+                          id={`q${currentQuestionIndex}-${i}`}
+                          onChange={() => onSelect(i)}
+                          checked={check === i}
+                          style={{ marginRight: "15px", flexShrink: 0 }}
+                        />
+                        <span style={{ flex: 1, marginTop: "50px" }}>{q}</span>
+                        <div
+                          className={`check ${check === i ? "checked" : ""}`}
+                        ></div>
                       </label>
-                      <div
-                        className={`check ${check === i ? "checked" : ""}`}
-                      ></div>
                     </li>
                   ))}
                 </ul>

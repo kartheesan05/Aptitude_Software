@@ -55,6 +55,7 @@ export default function Login() {
   const dispatch = useDispatch();
   const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
   const [isTestTimeValid, setIsTestTimeValid] = useState(true);
   const [availableDepartments, setAvailableDepartments] = useState([]);
 
@@ -176,36 +177,39 @@ export default function Login() {
     e.preventDefault();
     setErrors({});
     setError("");
-
-    // Check if test time is up
-    const isTestTimeValid = await checkTestTime();
-    if (!isTestTimeValid) {
-      return;
-    }
-
-    let newErrors = {};
-    if (!formData.username?.trim()) newErrors.username = "Name is required";
-    if (!formData.email?.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = "Please use your college email";
-    }
-    if (!formData.regNo?.trim()) {
-      newErrors.regNo = "Registration number is required";
-    } else if (!validateRegNo(formData.regNo)) {
-      newErrors.regNo =
-        "Registration number must be 13 digits and start with 212722";
-    }
-    if (!formData.department) newErrors.department = "Department is required";
-    if (!formData.accessCode?.trim())
-      newErrors.accessCode = "Access code is required";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+    setIsLoading(true);
 
     try {
+      // Check if test time is up
+      const isTestTimeValid = await checkTestTime();
+      if (!isTestTimeValid) {
+        setIsLoading(false);
+        return;
+      }
+
+      let newErrors = {};
+      if (!formData.username?.trim()) newErrors.username = "Name is required";
+      if (!formData.email?.trim()) {
+        newErrors.email = "Email is required";
+      } else if (!validateEmail(formData.email)) {
+        newErrors.email = "Please use your college email";
+      }
+      if (!formData.regNo?.trim()) {
+        newErrors.regNo = "Registration number is required";
+      } else if (!validateRegNo(formData.regNo)) {
+        newErrors.regNo =
+          "Registration number must be 13 digits and start with 212722";
+      }
+      if (!formData.department) newErrors.department = "Department is required";
+      if (!formData.accessCode?.trim())
+        newErrors.accessCode = "Access code is required";
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        setIsLoading(false);
+        return;
+      }
+
       dispatch(resetAllAction());
       dispatch(resetResultAction());
 
@@ -220,6 +224,7 @@ export default function Login() {
       // check for access code error
       if (sessionResponse.data.message === "Invalid access code") {
         setErrors({ accessCode: "Invalid access code" });
+        setIsLoading(false);
         return;
       }
 
@@ -227,6 +232,7 @@ export default function Login() {
         setError(
           "This user already has an active test session in another window/browser. Please complete the test in the original session."
         );
+        setIsLoading(false);
         return;
       }
 
@@ -234,13 +240,10 @@ export default function Login() {
         setError(
           "You have already taken this test. Each user is allowed only one attempt."
         );
+        setIsLoading(false);
         return;
       }
 
-      // await api.post('/api/users/create-session', {
-      //     email: formData.email,
-      //     regNo: formData.regNo
-      // });
       sessionStorage.setItem("token", sessionResponse.data.token);
       sessionStorage.setItem("role", sessionResponse.data.role);
       dispatch(
@@ -271,6 +274,8 @@ export default function Login() {
       setError(
         error.response?.data?.message || "An error occurred. Please try again."
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -374,13 +379,13 @@ export default function Login() {
         <button
           type="submit"
           className="btn"
-          disabled={!isFormValid()}
+          disabled={!isFormValid() || isLoading}
           style={{
-            opacity: isFormValid() ? 1 : 0.6,
-            cursor: isFormValid() ? "pointer" : "not-allowed",
+            opacity: isFormValid() && !isLoading ? 1 : 0.6,
+            cursor: isFormValid() && !isLoading ? "pointer" : "not-allowed",
           }}
         >
-          Start Quiz
+          {isLoading ? "Loading..." : "Start Quiz"}
         </button>
       </form>
 

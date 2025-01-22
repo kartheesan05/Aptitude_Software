@@ -315,7 +315,7 @@ router.post(
       const { email, regNo, department, accessCode, username } = req.body;
 
       const activeDepartment = await Department.findOne({
-        department,
+        id: department,
         isActive: true,
       });
 
@@ -386,7 +386,7 @@ router.post(
       const { email, regNo, department } = req.user;
 
       const activeDepartment = await Department.findOne({
-        department,
+        id: department,
         isActive: true,
       });
 

@@ -2,16 +2,15 @@ import "../styles/App.css";
 import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import MobileRestriction from "./MobileRestriction";
 import DevToolsBlocker from "./DevToolsBlocker";
-import DevToolsBlocked from "./DevToolsBlocked";
+import TestNavigationGuard from "./TestNavigationGuard";
+import AuthNavigationGuard from "./AuthNavigationGuard";
 
 import Login from "./Login";
 import Quiz from "./Quiz";
 import Instructions from "./Instructions";
-import Result from "./Result";
 import Feedback from "./Feedback";
 import AdminLogin from "./AdminLogin";
 import AdminDashboard from "./AdminDashboard";
-import { CheckUserExist } from "../helper/helper";
 import QuestionUpload from "./QuestionUpload";
 import Success from "./Success";
 import ResultsPage from "./ResultsPage";
@@ -21,6 +20,8 @@ const Layout = () => {
   return (
     <>
       <DevToolsBlocker />
+      <TestNavigationGuard />
+      <AuthNavigationGuard />
       <Outlet />
     </>
   );
@@ -37,23 +38,11 @@ const router = createBrowserRouter([
       },
       {
         path: "/instructions",
-        element: (
-          <CheckUserExist>
-            <Instructions />
-          </CheckUserExist>
-        ),
+        element: <Instructions />,
       },
       {
         path: "/quiz",
         element: <Quiz />,
-      },
-      {
-        path: "/result",
-        element: (
-          <CheckUserExist>
-            <Result />
-          </CheckUserExist>
-        ),
       },
       {
         path: "/feedback",
@@ -78,10 +67,6 @@ const router = createBrowserRouter([
       {
         path: "/mobile-restriction",
         element: <MobileRestriction />,
-      },
-      {
-        path: "/dev-tools-blocked",
-        element: <DevToolsBlocked />,
       },
       {
         path: "/results",

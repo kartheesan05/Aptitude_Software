@@ -136,7 +136,6 @@ export default function AdminDashboard() {
       }
 
       setResetLoading(true);
-      console.log("Resetting test for email:", userData.email);
 
       const response = await api.post(
         "/api/users/reset-test",
@@ -148,7 +147,6 @@ export default function AdminDashboard() {
         }
       );
 
-      console.log("Reset response:", response.data);
 
       if (response.data.status === "success") {
         alert("Test reset successfully");
@@ -271,7 +269,6 @@ export default function AdminDashboard() {
 
   const updateDepartments = async () => {
     try {
-      console.log("Sending departments to server:", availableDepartments);
       await api.post(
         "/api/admin/departments/update",
         {

@@ -81,7 +81,6 @@ export default function QuestionUpload() {
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      console.log('Selected image:', file);
       setNewQuestion(prev => ({...prev, image: file}));
     }
   };
@@ -114,7 +113,6 @@ export default function QuestionUpload() {
           }
         });
 
-        console.log('Comprehension upload response:', response.data);
         setSuccess('Comprehension question set added successfully!');
         setComprehensionData({
           passage: '',
@@ -144,7 +142,6 @@ export default function QuestionUpload() {
           }
         });
 
-        console.log('Question upload response:', response.data);
         setSuccess('Question added successfully!');
         setNewQuestion({
           question: '',

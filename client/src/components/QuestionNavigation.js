@@ -9,7 +9,6 @@ export default function QuestionNavigation({ questions, currentQuestionIndex, on
         const savedQuizState = sessionStorage.getItem('quizState');
         if (savedQuizState) {
             const { results } = JSON.parse(savedQuizState);
-            console.log(results);
             setAnsweredQuestions(results);
         }
     }, [currentQuestionIndex]); // Update when current question changes

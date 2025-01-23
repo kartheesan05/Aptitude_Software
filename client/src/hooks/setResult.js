@@ -5,7 +5,7 @@ export const PushAnswer = (result) => async (dispatch) => {
     try {
         await dispatch(Action.updateResult(result));
     } catch (error) {
-        console.log(error)
+        console.error(error)
     }
 }
 
@@ -13,7 +13,7 @@ export const updateResult = ({ trace, checked }) => async (dispatch) => {
     try {
         dispatch(Action.updateResult({ trace, checked }))
     } catch (error) {
-        console.log(error)
+        console.error(error)
     }
 }
 
@@ -40,14 +40,13 @@ export const usePublishResult = (resultData) => {
                 points
             };
 
-            console.log("Submitting result data:", dataToSubmit);
             
             await postServerData(
                 `/api/result`, 
                 dataToSubmit
             );
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     })();
 }

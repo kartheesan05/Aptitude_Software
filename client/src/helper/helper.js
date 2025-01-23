@@ -7,7 +7,6 @@ export function CheckUserExist({ children }){
     const { username } = useSelector(state => state.result);
     
     // Debug log
-    console.log("CheckUserExist - username:", username);
     
     return username ? children : <Navigate to={'/'} replace={true} />;
 }

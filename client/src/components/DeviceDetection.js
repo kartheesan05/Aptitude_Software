@@ -16,19 +16,10 @@ const DeviceDetection = () => {
             navigator.maxTouchPoints > 0
         );
 
-        console.log('Device Detection Results:');
-        console.log('Current Path:', location.pathname);
-        console.log('User Agent:', navigator.userAgent);
-        console.log('Window Width:', window.innerWidth);
-        console.log('Touch Enabled:', 'ontouchstart' in window);
-        console.log('Max Touch Points:', navigator.maxTouchPoints);
-        console.log('Is Mobile Device:', isMobileDevice);
-
         setIsMobile(isMobileDevice);
 
         // Only redirect if we're not already on the restriction page
         if (isMobileDevice && location.pathname !== '/mobile-restriction') {
-            console.log('Redirecting to mobile restriction page...');
             navigate('/mobile-restriction', { replace: true });
             return true;
         }

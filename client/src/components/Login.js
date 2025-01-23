@@ -68,7 +68,9 @@ export default function Login() {
   });
 
   useEffect(() => {
-    sessionStorage.clear();
+    if (sessionStorage.getItem("ongoingTest") !== "true") {
+      sessionStorage.clear();
+    }
     checkTestTime();
     fetchActiveDepartments();
   }, []);
@@ -109,7 +111,6 @@ export default function Login() {
   const fetchActiveDepartments = async () => {
     try {
       const response = await api.get("/api/users/departments/active");
-      console.log("Received departments from server:", response.data);
       if (response.data.length > 0) {
         setAvailableDepartments(response.data);
         setFormData((prev) => ({
@@ -267,7 +268,8 @@ export default function Login() {
           departmentId: formData.department.id,
         })
       );
-
+      sessionStorage.setItem("testPage", "instructions");
+      sessionStorage.setItem("ongoingTest", "true");
       navigate("/instructions");
     } catch (error) {
       console.error("Login error:", error);

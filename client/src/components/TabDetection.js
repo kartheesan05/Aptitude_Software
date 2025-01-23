@@ -22,11 +22,8 @@ function useTabVisibility({ onSubmitTest }) {
 
   useEffect(() => {
     if (typeof document.hidden === "undefined") {
-      console.log("Page Visibility API is not supported in this browser.");
       return;
     }
-
-    console.log("Tab and window detection initialized");
 
     audio.preload = "auto";
     audio.volume = 1.0;
@@ -44,16 +41,13 @@ function useTabVisibility({ onSubmitTest }) {
       const currentTime = Date.now();
       // Ignore switches that happen within 1 second of each other
       if (currentTime - lastSwitchTime < 1000) {
-        console.log("Ignoring switch - too soon after last switch");
         return;
       }
 
-      console.log("Tab/Window switched away!");
       setLastSwitchTime(currentTime);
 
       setTabSwitchCount((prevCount) => {
         const newCount = prevCount + 1;
-        console.log("Switch count:", newCount);
         sessionStorage.setItem("tabSwitchCount", newCount.toString());
 
         playBeep();
@@ -121,7 +115,6 @@ function useTabVisibility({ onSubmitTest }) {
       document.removeEventListener("click", initAudio);
       audio.pause();
       audio.src = "";
-      console.log("Tab and window detection cleanup");
     };
   }, [alertShown, navigate, audio, onSubmitTest, lastSwitchTime]);
 

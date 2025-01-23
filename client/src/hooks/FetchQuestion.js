@@ -71,7 +71,7 @@ export const MoveNextQuestion = () => async (dispatch) => {
     try {
         dispatch(moveNextAction());
     } catch (error) {
-        console.log(error);
+        console.error(error);
     }
 }
 
@@ -80,6 +80,6 @@ export const MovePrevQuestion = () => async (dispatch) => {
     try {
         dispatch(movePrevAction());
     } catch (error) {
-        console.log(error);
+        console.error(error);
     }
 }

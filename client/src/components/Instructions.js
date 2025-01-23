@@ -13,19 +13,12 @@ export default function Instructions() {
 
   useEffect(() => {
     const sessionRole = sessionStorage.getItem("role");
-    if (!sessionRole) {
-      navigate("/");
-      return;
-    }
     setRole(sessionRole);
     sessionStorage.removeItem("quizState");
   }, [navigate]);
 
   useEffect(() => {
     const preventBackNavigation = () => {
-      alert(
-        "Please use the provided buttons to navigate. Don't use browser navigation."
-      );
       navigate("/instructions", { replace: true });
     };
 
@@ -38,11 +31,6 @@ export default function Instructions() {
   }, [navigate]);
 
   const startQuiz = async () => {
-    if (role !== "student") {
-      navigate("/");
-      return;
-    }
-
     try {
       setIsLoading(true);
       // Reset trace before starting quiz
@@ -54,8 +42,7 @@ export default function Instructions() {
 
       // Store questions in session storage
       sessionStorage.setItem("quizQuestions", JSON.stringify(questions));
-
-      // Navigate to quiz after storing questions
+      sessionStorage.setItem("testPage", "quiz");
       navigate("/quiz");
     } catch (error) {
       console.error("Error fetching questions:", error);

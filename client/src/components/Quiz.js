@@ -37,12 +37,21 @@ export default function Quiz() {
         programming: quizState.results.slice(40, 50),
       };
 
+      // Clear ongoingTest flag before submitting
+      sessionStorage.setItem("ongoingTest", "false");
+      sessionStorage.setItem("testTaken", "true");
+
+      // Submit test first
       await api.post("/api/users/submit-test", { answers });
+
+      // Only navigate after successful submission
       timeUp
         ? navigate("/feedback?t=timeout")
         : navigate("/feedback?t=completed");
     } catch (error) {
       console.error("Error submitting test:", error);
+      // If there's an error, set ongoingTest back to true
+      sessionStorage.setItem("ongoingTest", "true");
     }
   };
 
@@ -53,7 +62,7 @@ export default function Quiz() {
   useEffect(() => {
     // Get user data from session storage if it exists
     const testTaken = sessionStorage.getItem("testTaken");
-    if (testTaken) {
+    if (testTaken === "true") {
       navigate("/feedback?t=completed");
       return;
     }
@@ -79,6 +88,9 @@ export default function Quiz() {
       navigate("/instructions");
       return;
     }
+
+    // Set ongoingTest flag when test starts
+    sessionStorage.setItem("ongoingTest", "true");
 
     const parsedQuestions = JSON.parse(storedQuestions);
 
@@ -202,7 +214,6 @@ export default function Quiz() {
       }
       setIsFullscreen(true);
     } catch (error) {
-      console.log("Fullscreen request failed");
     }
   };
 
@@ -240,8 +251,6 @@ export default function Quiz() {
   }, [questions, dispatch]);
 
   useEffect(() => {
-    console.log("Current trace:", currentQuestionIndex);
-    console.log("Current result:", result);
     setChecked(result[currentQuestionIndex]);
   }, [currentQuestionIndex, result]);
 
@@ -423,7 +432,6 @@ export default function Quiz() {
       sessionStorage.getItem("quizQuestions") || "{}"
     );
 
-    console.log("storedQuestions[sectionKey]", storedQuestions[sectionKey]);
 
     if (
       !storedQuestions[sectionKey] ||
@@ -446,10 +454,6 @@ export default function Quiz() {
           sessionStorage.setItem(
             "quizQuestions",
             JSON.stringify(updatedQuestions)
-          );
-          console.log(
-            "updatedQuestions",
-            sessionStorage.getItem("quizQuestions")
           );
 
           // Update questions state

@@ -20,8 +20,10 @@ export default function Quiz() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [loadingSection, setLoadingSection] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmitTest = async (timeUp = false) => {
+  const handleSubmitTest = async (state) => {
+    setIsSubmitting(true);
     try {
       const quizState = JSON.parse(sessionStorage.getItem("quizState"));
       if (!quizState || !quizState.results) {
@@ -45,13 +47,17 @@ export default function Quiz() {
       await api.post("/api/users/submit-test", { answers });
 
       // Only navigate after successful submission
-      timeUp
+      state === "timeout"
         ? navigate("/feedback?t=timeout")
+        : state === "tabswitch"
+        ? navigate("/feedback?t=tabswitch")
         : navigate("/feedback?t=completed");
     } catch (error) {
       console.error("Error submitting test:", error);
       // If there's an error, set ongoingTest back to true
       sessionStorage.setItem("ongoingTest", "true");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -213,8 +219,7 @@ export default function Quiz() {
         await element.msRequestFullscreen();
       }
       setIsFullscreen(true);
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   useEffect(() => {
@@ -345,7 +350,7 @@ export default function Quiz() {
 
   const handleTimeUp = async () => {
     try {
-      await handleSubmitTest(true);
+      await handleSubmitTest("timeout");
     } catch (error) {
       console.error("Error handling time up:", error);
     }
@@ -431,7 +436,6 @@ export default function Quiz() {
     const storedQuestions = JSON.parse(
       sessionStorage.getItem("quizQuestions") || "{}"
     );
-
 
     if (
       !storedQuestions[sectionKey] ||
@@ -554,8 +558,8 @@ export default function Quiz() {
         msUserSelect: "none",
       }}
     >
-      {/* <DeviceDetection /> */}
-      {/* <TabDetection onSubmitTest={handleSubmitTest} /> */}
+      <DeviceDetection />
+      <TabDetection onSubmitTest={handleSubmitTest} />
       <QuestionNavigation
         questions={questions}
         currentQuestionIndex={currentQuestionIndex}
@@ -707,6 +711,7 @@ export default function Quiz() {
                     onMouseOut={(e) =>
                       (e.target.style.backgroundColor = "#007bff")
                     }
+                    disabled={isSubmitting}
                   >
                     Continue Answering
                   </button>
@@ -718,17 +723,21 @@ export default function Quiz() {
                       color: "white",
                       border: "none",
                       borderRadius: "4px",
-                      cursor: "pointer",
+                      cursor: isSubmitting ? "not-allowed" : "pointer",
                       transition: "background-color 0.2s",
+                      opacity: isSubmitting ? 0.7 : 1,
                     }}
                     onMouseOver={(e) =>
+                      !isSubmitting &&
                       (e.target.style.backgroundColor = "#c82333")
                     }
                     onMouseOut={(e) =>
+                      !isSubmitting &&
                       (e.target.style.backgroundColor = "#dc3545")
                     }
+                    disabled={isSubmitting}
                   >
-                    Submit Anyway
+                    {isSubmitting ? "Submitting..." : "Submit Anyway"}
                   </button>
                 </div>
               </div>

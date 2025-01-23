@@ -14,15 +14,9 @@ import { authRouter } from './routes/authRoutes.js';
 
 const app = express();
 
-// Debug log environment variables
-console.log('Environment Variables Loaded:');
-console.log('PORT:', process.env.PORT);
-console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'SET' : 'NOT SET');
-console.log('ATLAS_URL:', process.env.ATLAS_URL ? 'SET' : 'NOT SET');
-console.log('R2 Config Loaded:', process.env.CLOUDFLARE_R2_BUCKET_NAME ? 'YES' : 'NO');
 
 /** Middlewares */
-app.use(morgan('dev')); // Add logging
+// app.use(morgan('dev'));
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

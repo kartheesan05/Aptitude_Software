@@ -21,8 +21,6 @@ router.get("/search", async (req, res) => {
   try {
     const { email } = req.query;
 
-    console.log("\n=== Search Request ===");
-    console.log("Email:", email);
 
     if (!email) {
       return res.status(400).json({
@@ -34,14 +32,9 @@ router.get("/search", async (req, res) => {
     const completedUser = await Result.findOne({ email: email.trim() });
     const activeUser = await ActiveSession.findOne({ email: email.trim() });
 
-    console.log("Search results:", {
-      completedUser: !!completedUser,
-      activeUser: !!activeUser,
-    });
 
     // If user not found in either collection
     if (!completedUser && !activeUser) {
-      console.log("No user found in either collection");
       return res.status(404).json({
         message: `No user found with email: ${email}`,
       });
@@ -72,7 +65,6 @@ router.get("/search", async (req, res) => {
 
     // Add active session data if available
     if (activeUser) {
-      console.log("Active user found:", activeUser);
       userData = {
         ...userData,
         regNo: activeUser.regNo,
@@ -81,7 +73,6 @@ router.get("/search", async (req, res) => {
       };
     }
 
-    console.log("\nSending user data:", userData);
     res.json(userData);
   } catch (error) {
     console.error("\nSearch error:", error);
@@ -119,7 +110,6 @@ router.post("/reset-test", async (req, res) => {
   try {
     const { email } = req.body;
 
-    console.log("Received reset request for email:", email);
 
     if (!email) {
       return res.status(400).json({
@@ -136,7 +126,6 @@ router.post("/reset-test", async (req, res) => {
       });
     }
 
-    console.log("User deleted successfully:", deletedUser);
 
     res.json({
       message: "Test reset successfully",
@@ -156,7 +145,6 @@ router.post("/check-user", async (req, res) => {
   try {
     const { email, regNo } = req.body;
 
-    console.log("Checking user:", { email, regNo });
 
     if (!email || !regNo) {
       return res.status(400).json({

@@ -28,8 +28,6 @@ const upload = multer({
 // Single route for regular questions
 router.post('/questions', auth, checkRole(['question_uploader']), upload.single('image'), async (req, res) => {
     try {
-        console.log('Received question data:', req.body);
-        console.log('Received file:', req.file);
         
         const { category, subCategory, question, options, correctAnswer } = req.body;
         
@@ -58,9 +56,7 @@ router.post('/questions', auth, checkRole(['question_uploader']), upload.single(
         // Upload image to R2 if present
         let imageUrl = null;
         if (req.file) {
-            console.log('Uploading image to R2...');
             imageUrl = await uploadImageToR2(req.file);
-            console.log('Image uploaded, URL:', imageUrl);
         }
 
         const newQuestion = new QuestionModel({
@@ -72,7 +68,6 @@ router.post('/questions', auth, checkRole(['question_uploader']), upload.single(
             image: imageUrl
         });
 
-        console.log('Question to be saved:', newQuestion);
 
         const savedQuestion = await newQuestion.save();
         

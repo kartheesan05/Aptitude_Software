@@ -70,7 +70,7 @@ export async function storeResult(req, res) {
 
         res.json({ msg: "Result Saved Successfully" });
     } catch (error) {
-        console.log(error); // To inspect the error
+        console.error(error); // To inspect the error
         res.json({ error: error.message });
     }
 }

@@ -5,7 +5,6 @@ import crypto from 'crypto';
 export const uploadImageToR2 = async (file) => {
     try {
         if (!file || !BUCKET_NAME) {
-            console.log('Missing file or bucket name:', { file: !!file, BUCKET_NAME });
             return null;
         }
 
@@ -14,12 +13,6 @@ export const uploadImageToR2 = async (file) => {
         const fileExtension = path.extname(file.originalname);
         const key = `${randomId}${fileExtension}`;
 
-        console.log('Uploading file:', {
-            bucket: BUCKET_NAME,
-            key,
-            size: file.size,
-            type: file.mimetype
-        });
 
         const uploadParams = {
             Bucket: BUCKET_NAME,
@@ -30,10 +23,8 @@ export const uploadImageToR2 = async (file) => {
 
         // Upload using AWS SDK v2 style
         const uploadedData = await R2.upload(uploadParams).promise();
-        console.log('Upload successful:', uploadedData);
 
         const imageUrl = `${PUBLIC_URL}/${key}`;
-        console.log('Generated image URL:', imageUrl);
         
         return imageUrl;
     } catch (error) {

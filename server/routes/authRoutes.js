@@ -23,8 +23,16 @@ router.post('/admin-login',
 
       // Hardcoded admin credentials - in production these should be in env vars and hashed
       const validAdmins = [
-        { username: 'admin', password: 'admin123', role: 'admin' },
-        { username: 'ques', password: 'ques123', role: 'question_uploader' }
+        {
+          username: process.env.ADMIN_USERNAME,
+          password: process.env.ADMIN_PASSWORD,
+          role: "admin",
+        },
+        {
+          username: process.env.UPLOAD_USERNAME,
+          password: process.env.UPLOAD_PASSWORD,
+          role: "question_uploader",
+        },
       ];
 
       const admin = validAdmins.find(a => a.username === username && a.password === password);

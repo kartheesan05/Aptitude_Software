@@ -348,7 +348,7 @@ router.post(
       const token = jwt.sign(
         { email, regNo, department, username, role: "student" },
         process.env.JWT_SECRET,
-        { expiresIn: "24h" }
+        { expiresIn: "2h" }
       );
 
       return res.json({

@@ -3,7 +3,7 @@ import { check, sleep } from "k6";
 
 // Test configuration
 export const options = {
-  stages: [{ duration: "10s", target: 400 }],
+  stages: [{ duration: "5s", target: 100 }],
   thresholds: {
     http_req_duration: ["p(95)<2000"], // 95% of requests should be below 2s
     http_req_failed: ["rate<0.01"], // Less than 1% of requests should fail

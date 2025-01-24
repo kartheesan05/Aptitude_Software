@@ -271,7 +271,7 @@ router.post(
         "cs",
         "ee",
         "ec",
-        "marine",
+        "mechat",
         "mech",
         "it",
       ])

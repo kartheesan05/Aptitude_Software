@@ -19,8 +19,7 @@
 //   'chem': 'chem',
 //   'bio': 'bio',
 //   'aids': 'aids',
-//   'auto': 'auto',
-//   'marine': 'marine'
+//   'auto': 'auto'
 // };
 
 // router.get('/debug', async (req, res) => {

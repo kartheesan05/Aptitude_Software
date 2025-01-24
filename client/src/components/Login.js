@@ -18,8 +18,6 @@ export const departments = [
   // { id: 'bio', name: 'Biotechnology', coreCategory: 'bio' },
   // { id: 'aids', name: 'Artificial Intelligence and Data Science', coreCategory: 'aids' },
   // { id: 'auto', name: 'Automobile Engineering', coreCategory: 'auto' },
-  // // { id: 'marine', name: 'Marine Engineering', coreCategory: 'marine' }
-  // { id: 'marine', name: 'Mechanical and Automobile Engineering', coreCategory: 'marine' }
 
   {
     id: "aids",
@@ -42,9 +40,9 @@ export const departments = [
     coreCategory: "ec",
   },
   {
-    id: "marine",
-    name: "Mechanical and Automobile Engineering",
-    coreCategory: "marine",
+    id: "mechat",
+    name: "Mechanical and Automation Engineering",
+    coreCategory: "mechat",
   },
   { id: "mech", name: "Mechanical Engineering", coreCategory: "mech" },
   { id: "it", name: "Information Technology", coreCategory: "it" },

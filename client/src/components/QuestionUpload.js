@@ -74,7 +74,7 @@ export default function QuestionUpload() {
       'bio',
       'aids',
       'auto',
-      'marine'
+      'mechat'
     ] 
   };
 

@@ -71,21 +71,16 @@ export default function Instructions() {
 
           <div className="instruction-item">
             <span className="instruction-number">3</span>
-            <p>You cannot go back to previous questions once answered.</p>
-          </div>
-
-          <div className="instruction-item">
-            <span className="instruction-number">4</span>
             <p>Each correct answer will earn you points.</p>
           </div>
 
           <div className="instruction-item">
-            <span className="instruction-number">5</span>
+            <span className="instruction-number">4</span>
             <p>There is no negative marking.</p>
           </div>
 
           <div className="instruction-item">
-            <span className="instruction-number">6</span>
+            <span className="instruction-number">5</span>
             <p>Do not refresh the page during the quiz.</p>
           </div>
         </div>

@@ -11,9 +11,7 @@ const DeviceDetection = () => {
         const isMobileDevice = (
             /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
             /Mobile|iP(hone|od|ad)|Android|BlackBerry|IEMobile|Kindle|NetFront|Silk-Accelerated|(hpw|web)OS|Fennec|Minimo|Opera M(obi|ini)|Blazer|Dolfin|Dolphin|Skyfire|Zune/i.test(navigator.userAgent) ||
-            window.innerWidth <= 800 ||
-            'ontouchstart' in window ||
-            navigator.maxTouchPoints > 0
+            window.innerWidth <= 600
         );
 
         setIsMobile(isMobileDevice);

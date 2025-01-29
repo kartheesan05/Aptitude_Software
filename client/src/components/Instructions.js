@@ -81,7 +81,17 @@ export default function Instructions() {
 
           <div className="instruction-item">
             <span className="instruction-number">5</span>
-            <p>Do not refresh the page during the quiz.</p>
+            <p>Do not switch tabs or windows during the test.</p>
+          </div>
+
+          <div className="instruction-item">
+            <span className="instruction-number">6</span>
+            <p>Do not exit full screen.</p>
+          </div>
+
+          <div className="instruction-item">
+            <span className="instruction-number">7</span>
+            <p>Do not close the test tab.</p>
           </div>
         </div>
 

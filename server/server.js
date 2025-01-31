@@ -17,7 +17,11 @@ const app = express();
 
 /** Middlewares */
 // app.use(morgan('dev'));
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // app.use('/api', router);
@@ -51,10 +55,16 @@ const initializeAccessCode = async () => {
     try {
         const existingCode = await AccessCode.findOne({ isActive: true });
         if (!existingCode) {
-            await AccessCode.create({ 
-                code: 'SVCE2024',  
-                isActive: true 
-            });
+            const existingSVCE = await AccessCode.findOne({ code: 'SVCE2024' });
+            if (existingSVCE && !existingSVCE.isActive) {
+                existingSVCE.isActive = true;
+                await existingSVCE.save();
+            } else if (!existingSVCE) {
+                await AccessCode.create({
+                    code: 'SVCE2024',
+                    isActive: true
+                });
+            }
             console.log('Default access code created: SVCE2024');
         } else {
             console.log('Access code already exists');

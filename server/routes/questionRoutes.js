@@ -60,7 +60,7 @@ router.post('/questions', auth, checkRole(['question_uploader']), upload.single(
         }
 
         const newQuestion = new QuestionModel({
-            category,
+            category: subCategory || category,
             subCategory,
             question,
             options: parsedOptions,

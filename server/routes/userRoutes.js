@@ -432,7 +432,7 @@ router.post(
         aptitude: aptitudeQuestions.map((q) => ({
           question: q.question,
           options: q.options.map((opt, i) =>
-            i === q.correctAnswer ? opt + " *" : opt
+            i === q.correctAnswer ? opt + "" : opt
           ),
           image: q.image || null,
         })),
@@ -727,31 +727,31 @@ router.get("/fetch-section", auth, checkRole(["student"]), async (req, res) => {
         q1: {
           question: comprehension.q1.question,
           options: comprehension.q1.options.map((opt, i) =>
-            i === comprehension.q1.correctAnswer ? opt + " *" : opt
+            i === comprehension.q1.correctAnswer ? opt + "" : opt
           ),
         },
         q2: {
           question: comprehension.q2.question,
           options: comprehension.q2.options.map((opt, i) =>
-            i === comprehension.q2.correctAnswer ? opt + " *" : opt
+            i === comprehension.q2.correctAnswer ? opt + "" : opt
           ),
         },
         q3: {
           question: comprehension.q3.question,
           options: comprehension.q3.options.map((opt, i) =>
-            i === comprehension.q3.correctAnswer ? opt + " *" : opt
+            i === comprehension.q3.correctAnswer ? opt + "" : opt
           ),
         },
         q4: {
           question: comprehension.q4.question,
           options: comprehension.q4.options.map((opt, i) =>
-            i === comprehension.q4.correctAnswer ? opt + " *" : opt
+            i === comprehension.q4.correctAnswer ? opt + "" : opt
           ),
         },
         q5: {
           question: comprehension.q5.question,
           options: comprehension.q5.options.map((opt, i) =>
-            i === comprehension.q5.correctAnswer ? opt + " *" : opt
+            i === comprehension.q5.correctAnswer ? opt + "" : opt
           ),
         },
       };
@@ -759,7 +759,7 @@ router.get("/fetch-section", auth, checkRole(["student"]), async (req, res) => {
       questions = generatedQuestions[populateField].map((q) => ({
         question: q.question,
         options: q.options.map((opt, i) =>
-          i === q.correctAnswer ? opt + " *" : opt
+          i === q.correctAnswer ? opt + "" : opt
         ),
         image: q.image || null,
       }));

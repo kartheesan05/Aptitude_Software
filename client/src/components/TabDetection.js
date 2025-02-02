@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import beepSound from "../assets/beep.js";
+import beepSound from "../assets/beep.mp3";
 
 function useTabVisibility({ onSubmitTest }) {
   const [tabSwitchCount, setTabSwitchCount] = useState(() => {
@@ -15,24 +15,59 @@ function useTabVisibility({ onSubmitTest }) {
   });
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
-  const [audio] = useState(new Audio(beepSound));
+  const [audio] = useState(() => {
+    const newAudio = new Audio(beepSound);
+    newAudio.preload = "auto";
+    newAudio.volume = 1.0;
+    return newAudio;
+  });
   const [lastSwitchTime, setLastSwitchTime] = useState(0);
   const navigate = useNavigate();
+
+  // Initialize audio on component mount
+  useEffect(() => {
+    const initAudio = async () => {
+      try {
+        // Create a new context on user interaction
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioContext = new AudioContext();
+        await audioContext.resume();
+
+        // Try to play and immediately pause to initialize
+        await audio.play();
+        audio.pause();
+        audio.currentTime = 0;
+      } catch (error) {
+        console.error("Error initializing audio:", error);
+      }
+    };
+
+    // Initialize on first click
+    document.addEventListener("click", initAudio, { once: true });
+    return () => {
+      document.removeEventListener("click", initAudio);
+    };
+  }, [audio]);
 
   useEffect(() => {
     if (typeof document.hidden === "undefined") {
       return;
     }
 
-    audio.preload = "auto";
-    audio.volume = 1.0;
-
     const playBeep = async () => {
       try {
+        // Reset the audio to start
         audio.currentTime = 0;
-        await audio.play();
+        // Create a promise to play
+        const playPromise = audio.play();
+
+        if (playPromise !== undefined) {
+          await playPromise;
+        }
       } catch (error) {
         console.error("Error playing beep:", error);
+        // If play fails, try to recover
+        audio.currentTime = 0;
       }
     };
 
@@ -49,7 +84,8 @@ function useTabVisibility({ onSubmitTest }) {
         const newCount = prevCount + 1;
         sessionStorage.setItem("tabSwitchCount", newCount.toString());
 
-        playBeep();
+        // Play beep sound
+        playBeep().catch(console.error);
 
         if (newCount === 1) {
           setWarningMessage(
@@ -98,27 +134,12 @@ function useTabVisibility({ onSubmitTest }) {
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("blur", handleWindowBlur);
 
-    const initAudio = () => {
-      audio
-        .play()
-        .then(() => {
-          audio.pause();
-          audio.currentTime = 0;
-        })
-        .catch((error) => console.error("Error initializing audio:", error));
-      document.removeEventListener("click", initAudio);
-    };
-    document.addEventListener("click", initAudio);
-
     return () => {
       if (switchTimeout) {
         clearTimeout(switchTimeout);
       }
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleWindowBlur);
-      document.removeEventListener("click", initAudio);
-      audio.pause();
-      audio.src = "";
     };
   }, [navigate, audio, onSubmitTest, lastSwitchTime]);
 
